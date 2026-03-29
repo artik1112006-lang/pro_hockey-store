@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Панель управления — Pro Hockey Store</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+    <div class="logo"><h1>PRO HOCKEY ADMIN</h1></div>
+    <nav>
+        <a href="/">На сайт ←</a>
+        <a href="/logout" style="color: #ff4d4d; margin-left: 20px;">Выйти</a>
+    </nav>
+</header>
+
+<!-- СЕКЦИЯ 1: ДОБАВЛЕНИЕ ТОВАРА -->
+<div class="form-container">
+    <h2>Добавить новый товар</h2>
+    <form action="/admin/add" method="post">
+        <input type="text" name="name" placeholder="Название товара" required>
+        <input type="number" step="0.01" name="price" placeholder="Цена в BYN" required>
+        <input type="url" name="img" placeholder="Ссылка на фото (URL)" required>
+        <button type="submit" class="btn">Добавить в базу</button>
+    </form>
+</div>
+
+<!-- СЕКЦИЯ 2: СПИСОК ТОВАРОВ -->
+<div style="padding: 0 5%; margin-top: 40px; overflow-x: auto;">
+    <h2>Все товары в базе</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Фото</th>
+                <th>Название</th>
+                <th>Цена</th>
+                <th>ID</th>
+                <th>Действие</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in products %}
+            <tr>
+                <td><img src="{{ p.image_url }}" style="height: 50px; border-radius: 4px;"></td>
+                <td>{{ p.name }}</td>
+                <td>{{ p.price }} BYN</td>
+                <td>#{{ p.id }}</td>
+                <td>
+                    <form action="/admin/delete/{{ p.id }}" method="post" onsubmit="return confirm('Удалить товар?')">
+                        <button type="submit" style="background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="text-align: center;">Товаров пока нет.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- СЕКЦИЯ 3: СПИСОК ЗАКАЗОВ -->
+<div style="padding: 50px 5%; margin-top: 50px; background: #e9ecef;">
+    <h2>📥 Поступившие заказы</h2>
+    <table style="background: white;">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Клиент</th>
+                <th>Телефон</th>
+                <th>Что заказал</th>
+                <th>Действие</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for o in orders %}
+            <tr>
+                <td>#{{ o.id }}</td>
+                <td><b>{{ o.name }}</b></td>
+                <td>{{ o.phone }}</td>
+                <td style="white-space: pre-line; font-size: 0.85rem; color: #555;">{{ o.items }}</td>
+                <td>
+                    <!-- Кнопка удаления заказа из базы -->
+                    <form action="/admin/order/delete/{{ o.id }}" method="post" onsubmit="return confirm('Удалить запись о заказе?')">
+                        <button type="submit" style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Очистить</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="text-align: center;">Новых заказов нет.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>

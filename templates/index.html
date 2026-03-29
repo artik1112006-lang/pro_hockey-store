@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Хоккейный магазин — Клюшки (BYN)</title>
+    <!-- Подключаем наш CSS файл -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <h1>HOCKEY SHOP</h1>
+    </div>
+    <nav>
+        <a href="/">Каталог</a>
+        <a href="/cart" id="cart-link">🛒 Корзина (<span id="cart-count">0</span>)</a>
+        <a href="/admin" style="opacity: 0.5; font-size: 0.8rem;">Админ</a>
+    </nav>
+</header>
+
+<div class="container">
+    {% for product in products %}
+    <div class="card">
+        <img src="{{ product.image_url }}" alt="{{ product.name }}">
+        <h3>{{ product.name }}</h3>
+        <p class="price">{{ product.price }} BYN</p>
+        <button class="btn" onclick="addToCart('{{ product.id }}', '{{ product.name }}', {{ product.price }})">
+            Добавить в корзину
+        </button>
+    </div>
+    {% else %}
+    <div style="grid-column: 1/-1; text-align: center; padding: 50px;">
+        <h2>Товаров пока нет. Запустите parser.py!</h2>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+    // Функция для обновления счетчика товаров в шапке
+    function updateCartCount() {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        document.getElementById('cart-count').innerText = cart.length;
+    }
+
+    // Функция добавления товара
+    function addToCart(id, name, price) {
+        // Получаем текущую корзину из LocalStorage
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+        // Добавляем новый товар
+        cart.push({
+            id: id,
+            name: name,
+            price: price
+        });
+
+        // Сохраняем обратно
+        localStorage.setItem('cart', JSON.stringify(cart));
+
+        // Обновляем цифру на кнопке корзины
+        updateCartCount();
+
+        // Маленькое уведомление
+        alert('Товар "' + name + '" добавлен в корзину!');
+    }
+
+    // Запускаем счетчик при загрузке страницы
+    updateCartCount();
+</script>
+
+</body>
+</html>

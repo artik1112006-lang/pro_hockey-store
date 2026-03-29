@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Корзина — Оформление заказа</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+    <div class="logo"><h1>HOCKEY SHOP</h1></div>
+    <nav>
+        <a href="/">← Вернуться в каталог</a>
+    </nav>
+</header>
+
+<div class="form-container">
+    <h2>Ваша корзина</h2>
+    <div id="cart-list">
+        <!-- Сюда JS вставит товары -->
+    </div>
+
+    <hr>
+    <h3 id="total-price" style="text-align: right;">Итого: 0 BYN</h3>
+
+    <div id="order-form-section" style="display: none; margin-top: 30px;">
+        <h3>Данные для доставки</h3>
+        <form id="checkout-form">
+            <input type="text" id="name" placeholder="Ваше имя" required>
+            <input type="tel" id="phone" placeholder="Номер телефона (+375...)" required>
+            <textarea id="address" placeholder="Адрес доставки" rows="3" required></textarea>
+            <button type="submit" class="btn">Подтвердить заказ</button>
+        </form>
+    </div>
+
+    <div id="empty-cart-msg" style="text-align: center; padding: 20px;">
+        <p>В корзине пока пусто :(</p>
+        <a href="/" class="btn btn-secondary">Перейти к покупкам</a>
+    </div>
+</div>
+
+<script>
+    const cartList = document.getElementById('cart-list');
+    const totalElement = document.getElementById('total-price');
+    const formSection = document.getElementById('order-form-section');
+    const emptyMsg = document.getElementById('empty-cart-msg');
+
+    // Загрузка данных из LocalStorage
+    function renderCart() {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+        if (cart.length === 0) {
+            formSection.style.display = 'none';
+            emptyMsg.style.display = 'block';
+            cartList.innerHTML = '';
+            totalElement.innerText = 'Итого: 0 BYN';
+            return;
+        }
+
+        emptyMsg.style.display = 'none';
+        formSection.style.display = 'block';
+
+        let html = '';
+        let total = 0;
+
+        cart.forEach((item, index) => {
+            html += `
+                <div class="cart-item">
+                    <span>${item.name}</span>
+                    <strong>${item.price} BYN</strong>
+                    <button onclick="removeItem(${index})" style="color:red; border:none; background:none; cursor:pointer;">✖</button>
+                </div>`;
+            total += parseFloat(item.price);
+        });
+
+        cartList.innerHTML = html;
+        totalElement.innerText = `Итого: ${total.toFixed(2)} BYN`;
+    }
+
+    function removeItem(index) {
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        cart.splice(index, 1);
+        localStorage.setItem('cart', JSON.stringify(cart));
+        renderCart();
+    }
+
+    // Отправка формы на бэкенд (FastAPI)
+    document.getElementById('checkout-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const itemsList = cart.map(i => `${i.name} (${i.price} BYN)`).join('\n');
+        const total = totalElement.innerText;
+
+        const formData = new FormData();
+        formData.append('name', document.getElementById('name').value);
+        formData.append('phone', document.getElementById('phone').value);
+        formData.append('items', `Товары:\n${itemsList}\n\n${total}`);
+
+        try {
+            const response = await fetch('/order', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('✅ Ваш заказ принят! Наш менеджер свяжется с вами в ближайшее время.');
+                localStorage.clear();
+                window.location.href = '/';
+            } else {
+                alert('Ошибка при отправке заказа. Попробуйте еще раз.');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Связь с сервером потеряна.');
+        }
+    });
+
+    renderCart();
+</script>
+
+</body>
+</html>
