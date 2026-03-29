@@ -14,3 +14,15 @@ if __name__ == '__main__':
     print_hi('PyCharm')
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
+@app.post("/admin/order/delete/{o_id}")
+async def delete_order(request: Request, o_id: int, db: Session = Depends(get_db)):
+    if not request.session.get("admin"):
+        return RedirectResponse(url="/login", status_code=303)
+
+    o = db.query(Order).filter(Order.id == o_id).first()
+    if o:
+        db.delete(o)
+        db.commit()
+
+    # status_code=303 ОБЯЗАТЕЛЕН для перенаправления после POST
+    return RedirectResponse(url="/admin", status_code=303)
