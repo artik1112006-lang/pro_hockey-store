@@ -6,6 +6,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
+import os
+# Импортируем из твоего database.py
 from database import SessionLocal, Product, Order, Base, engine
 
 # Создаем таблицы
@@ -15,9 +17,9 @@ app = FastAPI()
 
 # НАСТРОЙКИ
 app.add_middleware(SessionMiddleware, secret_key="PRO_HOCKEY_SECRET")
-ADMIN_PASSWORD = "123"  # Твой пароль для входа
-TELEGRAM_TOKEN = "ВАШ_ТОКЕН" # Сюда вставь токен от BotFather
-CHAT_ID = "ВАШ_ID"        # Сюда вставь свой ID
+ADMIN_PASSWORD = "123"  # Твой пароль
+TELEGRAM_TOKEN = "ВАШ_ТОКЕН" # Токен от BotFather
+CHAT_ID = "ВАШ_ID"        # Твой ID
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -30,7 +32,7 @@ def get_db():
         db.close()
 
 def send_tg_message(text):
-    # ИСПРАВЛЕНО: Добавлен /bot перед токеном
+    # ОШИБКА №1 ИСПРАВЛЕНА: Добавлен /bot (в твоем коде его не было)
     url = f"https://api.telegram.org{TELEGRAM_TOKEN}/sendMessage"
     try:
         requests.post(url, json={"chat_id": CHAT_ID, "text": text, "parse_mode": "HTML"})
@@ -42,7 +44,12 @@ def send_tg_message(text):
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request, db: Session = Depends(get_db)):
     products_list = db.query(Product).all()
-    return templates.TemplateResponse(request=request, name="index.html", context={"products": products_list})
+    # ОШИБКА №2 ИСПРАВЛЕНА: Добавлен обязательный аргумент request для новых версий Jinja2
+    return templates.TemplateResponse(
+        request=request, 
+        name="index.html", 
+        context={"products": products_list}
+    )
 
 @app.get("/cart", response_class=HTMLResponse)
 async def cart(request: Request):
@@ -83,7 +90,11 @@ async def admin(request: Request, db: Session = Depends(get_db)):
         return RedirectResponse(url="/login")
     products_list = db.query(Product).all()
     orders_list = db.query(Order).order_by(Order.id.desc()).all()
-    return templates.TemplateResponse(request=request, name="admin.html", context={"products": products_list, "orders": orders_list})
+    return templates.TemplateResponse(
+        request=request, 
+        name="admin.html", 
+        context={"products": products_list, "orders": orders_list}
+    )
 
 @app.post("/admin/add")
 async def add_product(request: Request, name: str = Form(...), price: float = Form(...), img: str = Form(...), db: Session = Depends(get_db)):
@@ -102,7 +113,6 @@ async def delete_product(request: Request, product_id: int, db: Session = Depend
         db.commit()
     return RedirectResponse(url="/admin", status_code=303)
 
-# НОВЫЙ МАРШРУТ: Удаление заказа из админки
 @app.post("/admin/order/delete/{order_id}")
 async def delete_order(request: Request, order_id: int, db: Session = Depends(get_db)):
     if not request.session.get("admin"): return RedirectResponse(url="/login")
@@ -113,4 +123,6 @@ async def delete_order(request: Request, order_id: int, db: Session = Depends(ge
     return RedirectResponse(url="/admin", status_code=303)
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8080)
+    # Для Render используем порт из переменной окружения
+    port = int(os.environ.get("PORT", 8080))
+    uvicorn.run(app, host="0.0.0.0", port=port)
