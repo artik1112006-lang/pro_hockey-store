@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Хоккейный магазин — Клюшки (BYN)</title>
+    <title>Pro Hockey Store — Профессиональные клюшки</title>
     <!-- Подключаем наш CSS файл -->
     <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -11,12 +11,12 @@
 
 <header>
     <div class="logo">
-        <h1>HOCKEY SHOP</h1>
+        <h1>PRO HOCKEY STORE</h1>
     </div>
     <nav>
         <a href="/">Каталог</a>
         <a href="/cart" id="cart-link">🛒 Корзина (<span id="cart-count">0</span>)</a>
-        <a href="/admin" style="opacity: 0.5; font-size: 0.8rem;">Админ</a>
+        <!-- Ссылка на админку удалена. Заходи по адресу /admin вручную -->
     </nav>
 </header>
 
@@ -27,46 +27,36 @@
         <h3>{{ product.name }}</h3>
         <p class="price">{{ product.price }} BYN</p>
         <button class="btn" onclick="addToCart('{{ product.id }}', '{{ product.name }}', {{ product.price }})">
-            Добавить в корзину
+            В корзину
         </button>
     </div>
     {% else %}
     <div style="grid-column: 1/-1; text-align: center; padding: 50px;">
-        <h2>Товаров пока нет. Запустите parser.py!</h2>
+        <h2>Товаров пока нет. Зайдите в админ-панель и добавьте их!</h2>
     </div>
     {% endfor %}
 </div>
 
 <script>
-    // Функция для обновления счетчика товаров в шапке
+    // Обновление счетчика товаров в шапке
     function updateCartCount() {
         const cart = JSON.parse(localStorage.getItem('cart') || '[]');
         document.getElementById('cart-count').innerText = cart.length;
     }
 
-    // Функция добавления товара
+    // Добавление товара в LocalStorage
     function addToCart(id, name, price) {
-        // Получаем текущую корзину из LocalStorage
         let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-
-        // Добавляем новый товар
         cart.push({
             id: id,
             name: name,
             price: price
         });
-
-        // Сохраняем обратно
         localStorage.setItem('cart', JSON.stringify(cart));
-
-        // Обновляем цифру на кнопке корзины
         updateCartCount();
-
-        // Маленькое уведомление
         alert('Товар "' + name + '" добавлен в корзину!');
     }
 
-    // Запускаем счетчик при загрузке страницы
     updateCartCount();
 </script>
 
