@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Hockey Store — Профессиональные клюшки</title>
-    <!-- Подключаем наш CSS файл -->
+    <title>Pro Hockey Store — Хоккейная экипировка</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -16,7 +15,6 @@
     <nav>
         <a href="/">Каталог</a>
         <a href="/cart" id="cart-link">🛒 Корзина (<span id="cart-count">0</span>)</a>
-        <!-- Ссылка на админку удалена. Заходи по адресу /admin вручную -->
     </nav>
 </header>
 
@@ -24,37 +22,33 @@
     {% for product in products %}
     <div class="card">
         <img src="{{ product.image_url }}" alt="{{ product.name }}">
-        <h3>{{ product.name }}</h3>
-        <p class="price">{{ product.price }} BYN</p>
-        <button class="btn" onclick="addToCart('{{ product.id }}', '{{ product.name }}', {{ product.price }})">
-            В корзину
-        </button>
+        <div class="card-content">
+            <h3>{{ product.name }}</h3>
+            <p class="price">{{ product.price }} BYN</p>
+            <button class="btn" onclick="addToCart('{{ product.id }}', '{{ product.name }}', {{ product.price }})">
+                В корзину
+            </button>
+        </div>
     </div>
     {% else %}
     <div style="grid-column: 1/-1; text-align: center; padding: 50px;">
-        <h2>Товаров пока нет. Зайдите в админ-панель и добавьте их!</h2>
+        <h2>Товаров пока нет. Зайдите в админку и добавьте их!</h2>
     </div>
     {% endfor %}
 </div>
 
 <script>
-    // Обновление счетчика товаров в шапке
     function updateCartCount() {
         const cart = JSON.parse(localStorage.getItem('cart') || '[]');
         document.getElementById('cart-count').innerText = cart.length;
     }
 
-    // Добавление товара в LocalStorage
     function addToCart(id, name, price) {
         let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        cart.push({
-            id: id,
-            name: name,
-            price: price
-        });
+        cart.push({ id, name, price });
         localStorage.setItem('cart', JSON.stringify(cart));
         updateCartCount();
-        alert('Товар "' + name + '" добавлен в корзину!');
+        alert('Товар добавлен в корзину!');
     }
 
     updateCartCount();
