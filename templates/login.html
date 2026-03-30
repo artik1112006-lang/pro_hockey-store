@@ -2,16 +2,17 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Вход в админку</title>
+    <title>Вход в админку — Pro Hockey Store</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div class="form-container">
+    <div class="form-container" style="margin-top: 100px;">
         <h2>Вход для администратора</h2>
         <form action="/login" method="post">
             <input type="password" name="password" placeholder="Введите пароль" required autofocus>
             <button type="submit" class="btn">Войти</button>
         </form>
+        <p style="margin-top: 20px;"><a href="/" style="color: #666; text-decoration: none; font-size: 0.9rem;">← На главную</a></p>
     </div>
 </body>
 </html>
