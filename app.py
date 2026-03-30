@@ -1,4 +1,4 @@
-import uvicorn, os
+import uvicorn, os, requests
 from typing import Optional
 from fastapi import FastAPI, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -7,6 +7,19 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 from database import SessionLocal, Product, Order, Category, Base, engine
+
+# --- НАСТРОЙКИ TELEGRAM (Вставь свои данные) ---
+TELEGRAM_TOKEN = "7964897474:AAFKUmB9t7vbGnlMVtzIIJkxAVZWJTk30pI"
+TELEGRAM_CHAT_ID = "1111122600"
+
+
+def send_telegram_msg(text: str):
+    try:
+        url = f"https://api.telegram.org{TELEGRAM_TOKEN}/sendMessage"
+        requests.post(url, data={"chat_id": TELEGRAM_CHAT_ID, "text": text})
+    except Exception as e:
+        print(f"Ошибка отправки в Telegram: {e}")
+
 
 # Создаем таблицы
 Base.metadata.create_all(bind=engine)
@@ -33,7 +46,6 @@ def get_db():
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request, q: str = None, category_id: int = None, db: Session = Depends(get_db)):
     query = db.query(Product)
-
     if q:
         query = query.filter(Product.name.contains(q))
     if category_id:
@@ -42,7 +54,6 @@ async def index(request: Request, q: str = None, category_id: int = None, db: Se
     products = query.all()
     categories = db.query(Category).all()
 
-    # ПРАВИЛЬНЫЙ СИНТАКСИС: request первым аргументом
     return templates.TemplateResponse(
         request=request,
         name="index.html",
@@ -62,8 +73,15 @@ async def cart(request: Request):
 @app.post("/order")
 async def checkout(name: str = Form(...), phone: str = Form(...), items: str = Form(...),
                    db: Session = Depends(get_db)):
-    db.add(Order(name=name, phone=phone, items=items))
+    # Сохраняем в базу
+    new_order = Order(name=name, phone=phone, items=items)
+    db.add(new_order)
     db.commit()
+
+    # Отправляем в Telegram
+    msg = f"🚨 НОВЫЙ ЗАКАЗ!\n\n👤 Имя: {name}\n📞 Тел: {phone}\n\n📦 Товары:\n{items}"
+    send_telegram_msg(msg)
+
     return {"status": "success"}
 
 
@@ -129,10 +147,9 @@ async def add_product(
         hand_options: str = Form(""), curve_options: str = Form(""),
         db: Session = Depends(get_db)
 ):
-    is_specs = True if has_specs == "on" else False
     db.add(Product(
         name=name, price=price, image_url=img, description=desc,
-        category_id=category_id, has_specs=is_specs,
+        category_id=category_id, has_specs=bool(has_specs),
         hand_options=hand_options, curve_options=curve_options
     ))
     db.commit()
@@ -150,7 +167,7 @@ async def edit_product(
     p = db.query(Product).filter(Product.id == p_id).first()
     if p:
         p.name, p.price, p.image_url, p.description, p.category_id = name, price, img, desc, category_id
-        p.has_specs = True if has_specs == "on" else False
+        p.has_specs = bool(has_specs)
         p.hand_options, p.curve_options = hand_options, curve_options
         db.commit()
     return RedirectResponse(url="/admin", status_code=303)
