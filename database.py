@@ -3,18 +3,21 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
-# Твоя ссылка (External) для работы из PyCharm
+# Ссылка для подключения
 RENDER_EXTERNAL_URL = "postgresql://hokey_user:YtP4rX0ZAg1h2wbiHqZT71YLS4nb8U5Y@dpg-d75072q4d50c73e2aa6g-a.ohio-postgres.render.com/hokey"
-
-# Если проект на Render, он подставит Internal URL сам, если на компе — берем твою ссылку
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", RENDER_EXTERNAL_URL)
 
-# Исправляем протокол, если Render выдаст старый формат (на всякий случай)
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Создаем движок для PostgreSQL
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# Исправлено: добавлены скобки и параметры стабильности
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=3600
+)
+
+# Эти строки ОБЯЗАТЕЛЬНО должны быть здесь:
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -44,5 +47,5 @@ class Order(Base):
     phone = Column(String)
     items = Column(String)
 
-# Создаем таблицы в облаке
+# Создаем таблицы
 Base.metadata.create_all(bind=engine)
