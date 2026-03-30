@@ -1,4 +1,5 @@
 import uvicorn, os
+from typing import Optional
 from fastapi import FastAPI, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -7,8 +8,7 @@ from sqlalchemy.orm import Session
 from starlette.middleware.sessions import SessionMiddleware
 from database import SessionLocal, Product, Order, Category, Base, engine
 
-# ВАЖНО: Мы убрали Base.metadata.drop_all!
-# Теперь база создается только если её нет.
+# Создаем таблицы
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -28,26 +28,31 @@ def get_db():
         db.close()
 
 
-# --- КЛИЕНТСКАЯ ЧАСТЬ С ПОИСКОМ ---
+# --- ГЛАВНАЯ СТРАНИЦА ---
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request, q: str = None, db: Session = Depends(get_db)):
+async def index(request: Request, q: str = None, category_id: int = None, db: Session = Depends(get_db)):
     query = db.query(Product)
 
-    # ЛОГИКА ПОИСКА
     if q:
         query = query.filter(Product.name.contains(q))
+    if category_id:
+        query = query.filter(Product.category_id == category_id)
 
     products = query.all()
     categories = db.query(Category).all()
+
+    # ПРАВИЛЬНЫЙ СИНТАКСИС: request первым аргументом
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={"products": products, "categories": categories, "search_query": q or ""}
+        context={
+            "products": products,
+            "categories": categories,
+            "search_query": q or ""
+        }
     )
 
-
-# ... (остальные роуты: /cart, /order, /login, /admin — остаются без изменений) ...
 
 @app.get("/cart", response_class=HTMLResponse)
 async def cart(request: Request):
@@ -62,6 +67,8 @@ async def checkout(name: str = Form(...), phone: str = Form(...), items: str = F
     return {"status": "success"}
 
 
+# --- АВТОРИЗАЦИЯ ---
+
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     return templates.TemplateResponse(request=request, name="login.html")
@@ -75,35 +82,77 @@ async def login(request: Request, password: str = Form(...)):
     return HTMLResponse("<h2>Ошибка!</h2><a href='/login'>Назад</a>")
 
 
+@app.get("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/")
+
+
+# --- АДМИН-ПАНЕЛЬ ---
+
 @app.get("/admin", response_class=HTMLResponse)
 async def admin(request: Request, db: Session = Depends(get_db)):
     if not request.session.get("admin"): return RedirectResponse(url="/login")
     products = db.query(Product).all()
     orders = db.query(Order).order_by(Order.id.desc()).all()
     categories = db.query(Category).all()
-    return templates.TemplateResponse(request=request, name="admin.html",
-                                      context={"products": products, "orders": orders, "categories": categories})
+    return templates.TemplateResponse(
+        request=request,
+        name="admin.html",
+        context={
+            "products": products,
+            "orders": orders,
+            "categories": categories
+        }
+    )
 
 
 @app.post("/admin/category/add")
-async def add_category(request: Request, name: str = Form(...), db: Session = Depends(get_db)):
+async def add_category(name: str = Form(...), db: Session = Depends(get_db)):
     db.add(Category(name=name))
     db.commit()
     return RedirectResponse(url="/admin", status_code=303)
 
 
 @app.post("/admin/category/delete/{c_id}")
-async def delete_category(c_id: int, db: Session = Depends(get_db), request: Request = None):
+async def delete_category(c_id: int, db: Session = Depends(get_db)):
     cat = db.query(Category).filter(Category.id == c_id).first()
     if cat: db.delete(cat); db.commit()
     return RedirectResponse(url="/admin", status_code=303)
 
 
 @app.post("/admin/add")
-async def add_product(request: Request, name: str = Form(...), price: float = Form(...), img: str = Form(...),
-                      desc: str = Form(...), category_id: int = Form(...), db: Session = Depends(get_db)):
-    db.add(Product(name=name, price=price, image_url=img, description=desc, category_id=category_id))
+async def add_product(
+        name: str = Form(...), price: float = Form(...), img: str = Form(...),
+        desc: str = Form(...), category_id: int = Form(...),
+        has_specs: Optional[str] = Form(None),
+        hand_options: str = Form(""), curve_options: str = Form(""),
+        db: Session = Depends(get_db)
+):
+    is_specs = True if has_specs == "on" else False
+    db.add(Product(
+        name=name, price=price, image_url=img, description=desc,
+        category_id=category_id, has_specs=is_specs,
+        hand_options=hand_options, curve_options=curve_options
+    ))
     db.commit()
+    return RedirectResponse(url="/admin", status_code=303)
+
+
+@app.post("/admin/edit/{p_id}")
+async def edit_product(
+        p_id: int, name: str = Form(...), price: float = Form(...), img: str = Form(...),
+        desc: str = Form(...), category_id: int = Form(...),
+        has_specs: Optional[str] = Form(None),
+        hand_options: str = Form(""), curve_options: str = Form(""),
+        db: Session = Depends(get_db)
+):
+    p = db.query(Product).filter(Product.id == p_id).first()
+    if p:
+        p.name, p.price, p.image_url, p.description, p.category_id = name, price, img, desc, category_id
+        p.has_specs = True if has_specs == "on" else False
+        p.hand_options, p.curve_options = hand_options, curve_options
+        db.commit()
     return RedirectResponse(url="/admin", status_code=303)
 
 
@@ -111,6 +160,13 @@ async def add_product(request: Request, name: str = Form(...), price: float = Fo
 async def delete_product(p_id: int, db: Session = Depends(get_db)):
     p = db.query(Product).filter(Product.id == p_id).first()
     if p: db.delete(p); db.commit()
+    return RedirectResponse(url="/admin", status_code=303)
+
+
+@app.post("/admin/order/delete/{o_id}")
+async def delete_order(o_id: int, db: Session = Depends(get_db)):
+    order = db.query(Order).filter(Order.id == o_id).first()
+    if order: db.delete(order); db.commit()
     return RedirectResponse(url="/admin", status_code=303)
 
 
