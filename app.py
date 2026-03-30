@@ -12,14 +12,15 @@ from database import SessionLocal, Product, Order, Category, Base, engine
 TELEGRAM_TOKEN = "8686923435:AAEHy9YL6C-fqGejUNZTYDTJ9I9ismbTCMo"
 TELEGRAM_CHAT_ID = "1111122600"
 
+
 def send_telegram_msg(text: str):
     try:
-        # ИСПРАВЛЕНО: Добавлен /bot для корректной работы API
         url = f"https://api.telegram.org{TELEGRAM_TOKEN}/sendMessage"
         payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML"}
         requests.post(url, data=payload, timeout=10)
     except Exception as e:
         print(f"⚠️ Ошибка Telegram: {e}")
+
 
 # Создаем таблицы
 Base.metadata.create_all(bind=engine)
@@ -29,8 +30,10 @@ app.add_middleware(SessionMiddleware, secret_key="HOCKEY_ULTRA_SAFE_KEY")
 
 ADMIN_PASSWORD = "123"
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
+
 
 def get_db():
     db = SessionLocal()
@@ -39,68 +42,56 @@ def get_db():
     finally:
         db.close()
 
-# --- ГЛАВНАЯ СТРАНИЦА ---
+
+# --- КЛИЕНТСКАЯ ЧАСТЬ ---
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request, q: str = None, category_id: int = None, db: Session = Depends(get_db)):
     query = db.query(Product)
-    if q:
-        query = query.filter(Product.name.contains(q))
-    if category_id:
-        query = query.filter(Product.category_id == category_id)
-
-    products = query.all()
-    categories = db.query(Category).all()
+    if q: query = query.filter(Product.name.contains(q))
+    if category_id: query = query.filter(Product.category_id == category_id)
 
     return templates.TemplateResponse(
         request=request,
         name="index.html",
-        context={"products": products, "categories": categories, "search_query": q or ""}
+        context={
+            "products": query.all(),
+            "categories": db.query(Category).all(),
+            "search_query": q or ""
+        }
     )
+
 
 @app.get("/cart", response_class=HTMLResponse)
 async def cart(request: Request):
-    return templates.TemplateResponse(request=request, name="cart.html")
+    return templates.TemplateResponse(request=request, name="cart.html", context={})
+
 
 @app.post("/order")
-async def checkout(name: str = Form(...), phone: str = Form(...), items: str = Form(...), db: Session = Depends(get_db)):
+async def checkout(name: str = Form(...), phone: str = Form(...), items: str = Form(...),
+                   db: Session = Depends(get_db)):
     db.add(Order(name=name, phone=phone, items=items))
     db.commit()
-    msg = f"<b>🚨 НОВЫЙ ЗАКАЗ!</b>\n\n👤 <b>Имя:</b> {name}\n📞 <b>Тел:</b> {phone}\n\n📦 <b>Товары:</b>\n{items}"
+    msg = f"<b>🚨 НОВЫЙ ЗАКАЗ!</b>\n👤 {name}\n📞 {phone}\n📦 {items}"
     send_telegram_msg(msg)
     return {"status": "success"}
 
-# --- АВТОРИЗАЦИЯ ---
-
-@app.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request):
-    return templates.TemplateResponse(request=request, name="login.html")
-
-@app.post("/login")
-async def login(request: Request, password: str = Form(...)):
-    if password == ADMIN_PASSWORD:
-        request.session["admin"] = True
-        return RedirectResponse(url="/admin", status_code=303)
-    return HTMLResponse("<h2>Ошибка!</h2><a href='/login'>Назад</a>")
-
-@app.get("/logout")
-async def logout(request: Request):
-    request.session.clear()
-    return RedirectResponse(url="/")
 
 # --- АДМИН-ПАНЕЛЬ ---
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin(request: Request, db: Session = Depends(get_db)):
     if not request.session.get("admin"): return RedirectResponse(url="/login")
-    products = db.query(Product).all()
-    orders = db.query(Order).order_by(Order.id.desc()).all()
-    categories = db.query(Category).all()
     return templates.TemplateResponse(
         request=request,
         name="admin.html",
-        context={"products": products, "orders": orders, "categories": categories}
+        context={
+            "products": db.query(Product).all(),
+            "orders": db.query(Order).order_by(Order.id.desc()).all(),
+            "categories": db.query(Category).all()
+        }
     )
+
 
 @app.post("/admin/category/add")
 async def add_category(name: str = Form(...), db: Session = Depends(get_db)):
@@ -108,11 +99,13 @@ async def add_category(name: str = Form(...), db: Session = Depends(get_db)):
     db.commit()
     return RedirectResponse(url="/admin", status_code=303)
 
+
 @app.post("/admin/category/delete/{c_id}")
 async def delete_category(c_id: int, db: Session = Depends(get_db)):
     cat = db.query(Category).filter(Category.id == c_id).first()
     if cat: db.delete(cat); db.commit()
     return RedirectResponse(url="/admin", status_code=303)
+
 
 @app.post("/admin/add")
 async def add_product(
@@ -122,20 +115,17 @@ async def add_product(
         hand_options: str = Form(""), curve_options: str = Form(""),
         db: Session = Depends(get_db)
 ):
-    is_specs = True if has_specs == "on" else False
-    new_product = Product(
-        name=name,
-        price=price,
-        image_url=img,
-        description=desc,
+    new_p = Product(
+        name=name, price=price, image_url=img, description=desc,
         category_id=category_id,
-        has_specs=is_specs,
+        has_specs=(has_specs == "on"),
         hand_options=hand_options,
         curve_options=curve_options
     )
-    db.add(new_product)
+    db.add(new_p)
     db.commit()
     return RedirectResponse(url="/admin", status_code=303)
+
 
 @app.post("/admin/edit/{p_id}")
 async def edit_product(
@@ -148,11 +138,11 @@ async def edit_product(
     p = db.query(Product).filter(Product.id == p_id).first()
     if p:
         p.name, p.price, p.image_url, p.description, p.category_id = name, price, img, desc, category_id
-        p.has_specs = True if has_specs == "on" else False
-        p.hand_options = hand_options
-        p.curve_options = curve_options
+        p.has_specs = (has_specs == "on")
+        p.hand_options, p.curve_options = hand_options, curve_options
         db.commit()
     return RedirectResponse(url="/admin", status_code=303)
+
 
 @app.post("/admin/delete/{p_id}")
 async def delete_product(p_id: int, db: Session = Depends(get_db)):
@@ -160,11 +150,25 @@ async def delete_product(p_id: int, db: Session = Depends(get_db)):
     if p: db.delete(p); db.commit()
     return RedirectResponse(url="/admin", status_code=303)
 
-@app.post("/admin/order/delete/{o_id}")
-async def delete_order(o_id: int, db: Session = Depends(get_db)):
-    order = db.query(Order).filter(Order.id == o_id).first()
-    if order: db.delete(order); db.commit()
-    return RedirectResponse(url="/admin", status_code=303)
+
+@app.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request):
+    return templates.TemplateResponse(request=request, name="login.html", context={})
+
+
+@app.post("/login")
+async def login(request: Request, password: str = Form(...)):
+    if password == ADMIN_PASSWORD:
+        request.session["admin"] = True
+        return RedirectResponse(url="/admin", status_code=303)
+    return HTMLResponse("<h2>Ошибка!</h2><a href='/login'>Назад</a>")
+
+
+@app.get("/logout")
+async def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse(url="/")
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=7777)
