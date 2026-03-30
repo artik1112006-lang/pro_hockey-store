@@ -5,7 +5,6 @@
     <title>Админ-панель — Pro Hockey Store</title>
     <link rel="stylesheet" href="/static/style.css">
     <style>
-        /* Фикс дизайна админки */
         body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; }
         header { background-color: #1a1a1a; color: white; padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; }
         header a { color: white; text-decoration: none; font-weight: bold; font-size: 0.9rem; }
@@ -19,11 +18,17 @@
             width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-family: inherit;
         }
 
+        .checkbox-group { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-size: 0.9rem; color: #555; }
+        .checkbox-group input { width: auto; margin: 0; cursor: pointer; }
+
+        /* Стили для настройки спец. параметров товара */
+        .specs-box { background: #fff5f5; padding: 10px; border-radius: 8px; border: 1px solid #ffe3e3; margin-top: 5px; }
+        .specs-box label { font-size: 0.75rem; font-weight: bold; color: #e63946; }
+
         .btn { background: #e63946; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
         .btn:hover { background: #c12e3a; }
         .btn-secondary { background: #457b9d; }
 
-        /* Таблица товаров */
         .table-container { padding: 0 5%; margin-top: 30px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
         th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
@@ -45,18 +50,18 @@
 </header>
 
 <div class="admin-container">
-    <!-- 1. КАТЕГОРИИ -->
+    <!-- 1. КАТЕГОРИИ (Просто список) -->
     <div class="form-section">
         <h2>Категории</h2>
         <form action="/admin/category/add" method="post">
-            <input type="text" name="name" placeholder="Название (Клюшки, Коньки...)" required>
+            <input type="text" name="name" placeholder="Название (Клюшки...)" required>
             <button type="submit" class="btn btn-secondary">Создать</button>
         </form>
         <div style="margin-top: 15px;">
             {% for cat in categories %}
-                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee;">
-                    <span>{{ cat.name }} <small>(ID:{{ cat.id }})</small></span>
-                    <form action="/admin/category/delete/{{ cat.id }}" method="post" onsubmit="return confirm('Удалить категорию и ВСЕ товары в ней?')">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
+                    <span>{{ cat.name }}</span>
+                    <form action="/admin/category/delete/{{ cat.id }}" method="post" onsubmit="return confirm('Удалить?')">
                         <button type="submit" style="background:none; border:none; color:red; cursor:pointer;">✖</button>
                     </form>
                 </div>
@@ -64,7 +69,7 @@
         </div>
     </div>
 
-    <!-- 2. НОВЫЙ ТОВАР -->
+    <!-- 2. НОВЫЙ ТОВАР (С индивидуальными параметрами) -->
     <div class="form-section" style="flex: 2;">
         <h2>Добавить товар</h2>
         <form action="/admin/add" method="post">
@@ -74,12 +79,27 @@
             </div>
             <input type="url" name="img" placeholder="URL фото" required>
             <textarea name="desc" placeholder="Описание..." rows="2"></textarea>
+
             <select name="category_id" required>
                 <option value="" disabled selected>Выберите категорию</option>
                 {% for cat in categories %}
                     <option value="{{ cat.id }}">{{ cat.name }}</option>
                 {% endfor %}
             </select>
+
+            <div class="checkbox-group">
+                <input type="checkbox" name="has_specs" id="p_specs_check"
+                       onchange="document.getElementById('p_specs_fields').style.display = this.checked ? 'block' : 'none'">
+                <label for="p_specs_check">Добавить хват/загиб для этого товара</label>
+            </div>
+
+            <div id="p_specs_fields" style="display:none;" class="specs-box">
+                <label>Варианты 1 (через запятую):</label>
+                <input type="text" name="hand_options" placeholder="Напр: Левый, Правый">
+                <label>Варианты 2 (через запятую):</label>
+                <input type="text" name="curve_options" placeholder="Напр: P92, P28, P88">
+            </div>
+
             <button type="submit" class="btn">Добавить в базу</button>
         </form>
     </div>
@@ -92,10 +112,10 @@
         <thead>
             <tr>
                 <th>Фото</th>
-                <th>Данные товара / Описание</th>
-                <th style="width: 150px;">Категория</th>
-                <th style="width: 100px;">Цена</th>
-                <th style="width: 120px;">Действие</th>
+                <th>Данные / Описание</th>
+                <th>Параметры (хват/загиб)</th>
+                <th>Категория / Цена</th>
+                <th>Действие</th>
             </tr>
         </thead>
         <tbody>
@@ -104,11 +124,19 @@
                 <form action="/admin/edit/{{ p.id }}" method="post">
                 <td>
                     <img src="{{ p.image_url }}" style="height: 50px; border-radius: 4px; display: block; margin-bottom: 5px;">
-                    <input type="text" name="img" value="{{ p.image_url }}" title="URL фото">
+                    <input type="text" name="img" value="{{ p.image_url }}">
                 </td>
                 <td>
                     <input type="text" name="name" value="{{ p.name }}" style="font-weight: bold;">
                     <textarea name="desc" rows="2">{{ p.description or '' }}</textarea>
+                </td>
+                <td>
+                    <div class="checkbox-group" style="margin:0;">
+                        <input type="checkbox" name="has_specs" id="spec_{{p.id}}" {% if p.has_specs %}checked{% endif %}>
+                        <label for="spec_{{p.id}}">Вкл.</label>
+                    </div>
+                    <input type="text" name="hand_options" value="{{ p.hand_options or '' }}" placeholder="Хваты">
+                    <input type="text" name="curve_options" value="{{ p.curve_options or '' }}" placeholder="Загибы">
                 </td>
                 <td>
                     <select name="category_id">
@@ -116,12 +144,12 @@
                             <option value="{{ cat.id }}" {% if p.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
                         {% endfor %}
                     </select>
+                    <input type="number" step="0.01" name="price" value="{{ p.price }}">
                 </td>
-                <td><input type="number" step="0.01" name="price" value="{{ p.price }}"></td>
                 <td>
-                    <button type="submit" class="save-btn">Сохранить</button>
+                    <button type="submit" class="save-btn">ОК</button>
                     </form>
-                    <form action="/admin/delete/{{ p.id }}" method="post" onsubmit="return confirm('Удалить товар?')">
+                    <form action="/admin/delete/{{ p.id }}" method="post" onsubmit="return confirm('Удалить?')">
                         <button type="submit" class="del-btn">Удалить</button>
                     </form>
                 </td>
@@ -139,7 +167,7 @@
             <tr>
                 <th>Клиент</th>
                 <th>Телефон</th>
-                <th>Товары</th>
+                <th>Товары (включая выбор)</th>
                 <th>Действие</th>
             </tr>
         </thead>
