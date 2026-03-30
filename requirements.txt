@@ -8,3 +8,11 @@ python-multipart
 sqlalchemy
 requests
 starlette
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+jinja2
+python-multipart
+requests
+itsdangerous
