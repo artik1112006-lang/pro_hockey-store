@@ -2,121 +2,131 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Корзина — Pro Hockey Store</title>
+    <title>Ваша корзина — Pro Hockey Store</title>
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; }
+        .cart-container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        h1 { border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 1.5rem; }
+
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
+        .item-info b { display: block; font-size: 1.1rem; }
+        .item-info small { color: #666; }
+
+        .price { font-weight: bold; color: #e63946; }
+        .remove-btn { color: #999; cursor: pointer; border: none; background: none; font-size: 1.2rem; }
+        .remove-btn:hover { color: #e63946; }
+
+        .total-section { text-align: right; margin-top: 20px; font-size: 1.3rem; font-weight: bold; }
+        .order-form { margin-top: 30px; padding-top: 20px; border-top: 2px solid #eee; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+
+        .btn { background: #e63946; color: white; border: none; padding: 15px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; font-size: 1rem; }
+        .btn:hover { background: #c12e3a; }
+        .back-link { display: inline-block; margin-bottom: 20px; text-decoration: none; color: #457b9d; font-weight: bold; }
+    </style>
 </head>
 <body>
 
-<header>
-    <div class="logo"><h1>HOCKEY SHOP</h1></div>
-    <nav>
-        <a href="/">← Вернуться в каталог</a>
-    </nav>
-</header>
+<div class="cart-container">
+    <a href="/" class="back-link">← Вернуться в каталог</a>
+    <h1>Ваша корзина</h1>
 
-<div class="form-container">
-    <h2>Ваша корзина</h2>
-    <div id="cart-list">
-        <!-- Сюда JS вставит товары -->
+    <div id="cart-items">
+        <!-- Товары появятся здесь -->
     </div>
 
-    <hr>
-    <h3 id="total-price" style="text-align: right; margin-top: 20px;">Итого: 0 BYN</h3>
+    <div class="total-section">
+        Итого: <span id="total-price">0</span> BYN
+    </div>
 
-    <div id="order-form-section" style="display: none; margin-top: 30px;">
-        <h3>Данные для доставки</h3>
-        <form id="checkout-form">
+    <div id="empty-msg" style="display:none; text-align:center; padding: 40px 0;">
+        <p>В корзине пока пусто :(</p>
+        <a href="/" class="btn" style="text-decoration:none; display:inline-block; width:auto;">Перейти к покупкам</a>
+    </div>
+
+    <div class="order-form" id="order-form">
+        <h3>Оформить заказ</h3>
+        <form onsubmit="sendOrder(event)">
             <input type="text" id="name" placeholder="Ваше имя" required>
-            <input type="tel" id="phone" placeholder="Номер телефона (+375...)" required>
-            <textarea id="address" placeholder="Адрес доставки" rows="3" required></textarea>
+            <input type="tel" id="phone" placeholder="Номер телефона" required>
             <button type="submit" class="btn">Подтвердить заказ</button>
         </form>
-    </div>
-
-    <div id="empty-cart-msg" style="text-align: center; padding: 20px;">
-        <p>В корзине пока пусто :(</p>
-        <a href="/" class="btn btn-secondary">Перейти к покупкам</a>
     </div>
 </div>
 
 <script>
-    const cartList = document.getElementById('cart-list');
-    const totalElement = document.getElementById('total-price');
-    const formSection = document.getElementById('order-form-section');
-    const emptyMsg = document.getElementById('empty-cart-msg');
-
-    function renderCart() {
+    function displayCart() {
         const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const container = document.getElementById('cart-items');
+        const totalEl = document.getElementById('total-price');
+        const form = document.getElementById('order-form');
+        const emptyMsg = document.getElementById('empty-msg');
 
         if (cart.length === 0) {
-            formSection.style.display = 'none';
+            container.innerHTML = '';
+            form.style.display = 'none';
             emptyMsg.style.display = 'block';
-            cartList.innerHTML = '';
-            totalElement.innerText = 'Итого: 0 BYN';
+            totalEl.innerText = '0';
             return;
         }
 
         emptyMsg.style.display = 'none';
-        formSection.style.display = 'block';
-
-        let html = '';
+        form.style.display = 'block';
+        container.innerHTML = '';
         let total = 0;
 
         cart.forEach((item, index) => {
-            html += `
-                <div class="cart-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
-                    <span>${item.name}</span>
-                    <div style="display: flex; align-items: center; gap: 15px;">
-                        <strong>${item.price} BYN</strong>
-                        <button onclick="removeItem(${index})" style="color:red; border:none; background:none; cursor:pointer; font-size: 1.2rem;">✖</button>
-                    </div>
-                </div>`;
             total += parseFloat(item.price);
+            container.innerHTML += `
+                <div class="cart-item">
+                    <div class="item-info">
+                        <b>${item.name}</b>
+                    </div>
+                    <div>
+                        <span class="price">${item.price} BYN</span>
+                        <button class="remove-btn" onclick="removeItem(${index})">✖</button>
+                    </div>
+                </div>
+            `;
         });
-
-        cartList.innerHTML = html;
-        totalElement.innerText = `Итого: ${total.toFixed(2)} BYN`;
+        totalEl.innerText = total.toFixed(2);
     }
 
     function removeItem(index) {
         let cart = JSON.parse(localStorage.getItem('cart') || '[]');
         cart.splice(index, 1);
         localStorage.setItem('cart', JSON.stringify(cart));
-        renderCart();
+        displayCart();
     }
 
-    document.getElementById('checkout-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
+    async function sendOrder(event) {
+        event.preventDefault();
         const cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const itemsList = cart.map(i => `${i.name} (${i.price} BYN)`).join('\n');
-        const total = totalElement.innerText;
-        const address = document.getElementById('address').value;
+        const name = document.getElementById('name').value;
+        const phone = document.getElementById('phone').value;
+
+        // Собираем текст заказа (названия уже содержат хват/загиб)
+        const itemsSummary = cart.map(i => `- ${i.name} (${i.price} BYN)`).join('\n');
+        const total = document.getElementById('total-price').innerText;
+        const fullMessage = `${itemsSummary}\n\nИТОГО: ${total} BYN`;
 
         const formData = new FormData();
-        formData.append('name', document.getElementById('name').value);
-        formData.append('phone', document.getElementById('phone').value);
-        formData.append('items', `Товары:\n${itemsList}\n\nАдрес: ${address}\n\n${total}`);
+        formData.append('name', name);
+        formData.append('phone', phone);
+        formData.append('items', fullMessage);
 
-        try {
-            const response = await fetch('/order', {
-                method: 'POST',
-                body: formData
-            });
+        const response = await fetch('/order', { method: 'POST', body: formData });
+        const result = await response.json();
 
-            if (response.ok) {
-                alert('✅ Ваш заказ принят!');
-                localStorage.clear();
-                window.location.href = '/';
-            } else {
-                alert('Ошибка сервера при отправке заказа.');
-            }
-        } catch (error) {
-            alert('Связь с сервером потеряна.');
+        if (result.status === 'success') {
+            alert('Заказ успешно оформлен! Мы свяжемся с вами.');
+            localStorage.removeItem('cart');
+            window.location.href = '/';
         }
-    });
+    }
 
-    renderCart();
+    displayCart();
 </script>
 
 </body>
