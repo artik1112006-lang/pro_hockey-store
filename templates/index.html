@@ -3,41 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Hockey Store — Хоккейная экипировка</title>
+    <title>Pro Hockey Store — Каталог</title>
     <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .category-nav { display: flex; justify-content: center; gap: 15px; padding: 20px; flex-wrap: wrap; }
+        .cat-btn { padding: 8px 20px; border-radius: 20px; border: 1px solid #ddd; background: white; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        .cat-btn:hover, .cat-btn.active { background: #e63946; color: white; border-color: #e63946; }
+
+        .modal { display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; max-width: 600px; width: 90%; position: relative; text-align: center; max-height: 85vh; overflow-y: auto; }
+        .close-modal { position: absolute; right: 20px; top: 10px; font-size: 35px; cursor: pointer; color: #333; }
+        .modal img { max-height: 350px; width: auto; max-width: 100%; object-fit: contain; margin-bottom: 20px; border-radius: 8px; }
+        .modal p { color: #555; line-height: 1.6; text-align: left; white-space: pre-line; background: #f9f9f9; padding: 15px; border-radius: 8px; }
+    </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">
-        <h1>PRO HOCKEY STORE</h1>
-    </div>
+    <div class="logo"><h1>PRO HOCKEY STORE</h1></div>
     <nav>
-        <a href="/">Каталог</a>
         <a href="/cart" id="cart-link">🛒 Корзина (<span id="cart-count">0</span>)</a>
     </nav>
 </header>
 
+<div class="category-nav">
+    <button class="cat-btn active" onclick="filterItems('all', this)">Все товары</button>
+    {% for cat in categories %}
+        <button class="cat-btn" onclick="filterItems('cat-{{ cat.id }}', this)">{{ cat.name }}</button>
+    {% endfor %}
+</div>
+
 <div class="container">
-    {% for product in products %}
-    <div class="card">
-        <img src="{{ product.image_url }}" alt="{{ product.name }}">
+    {% for p in products %}
+    <div class="card product-card cat-{{ p.category_id }}"
+         onclick="openModal('{{ p.name|replace("'", "\\'") }}', '{{ p.image_url }}', '{{ (p.description or "Описание отсутствует")|replace("'", "\\'")|replace("\n", " ") }}', '{{ p.price }}')">
+        <img src="{{ p.image_url }}" alt="{{ p.name }}">
         <div class="card-content">
-            <h3>{{ product.name }}</h3>
-            <p class="price">{{ product.price }} BYN</p>
-            <button class="btn" onclick="addToCart('{{ product.id }}', '{{ product.name }}', {{ product.price }})">
-                В корзину
-            </button>
+            <span style="font-size: 0.8rem; color: #e63946; font-weight: bold;">{{ p.category.name if p.category else 'Спорттовары' }}</span>
+            <h3>{{ p.name }}</h3>
+            <p class="price">{{ p.price }} BYN</p>
+            <button class="btn" onclick="event.stopPropagation(); addToCart('{{ p.id }}', '{{ p.name|replace("'", "\\'") }}', {{ p.price }})">В корзину</button>
         </div>
-    </div>
-    {% else %}
-    <div style="grid-column: 1/-1; text-align: center; padding: 50px;">
-        <h2>Товаров пока нет. Зайдите в админку и добавьте их!</h2>
     </div>
     {% endfor %}
 </div>
 
+<div id="productModal" class="modal" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <img id="modalImg" src="" alt="">
+        <h2 id="modalTitle"></h2>
+        <p id="modalDesc"></p>
+        <h3 id="modalPrice" style="color: #e63946; font-size: 1.8rem; margin-top: 20px;"></h3>
+    </div>
+</div>
+
 <script>
+    function filterItems(cat, btn) {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.product-card').forEach(card => {
+            card.style.display = (cat === 'all' || card.classList.contains(cat)) ? 'flex' : 'none';
+        });
+    }
+
+    function openModal(name, img, desc, price) {
+        document.getElementById('modalTitle').innerText = name;
+        document.getElementById('modalImg').src = img;
+        document.getElementById('modalDesc').innerText = desc;
+        document.getElementById('modalPrice').innerText = price + " BYN";
+        document.getElementById('productModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        document.getElementById('productModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
     function updateCartCount() {
         const cart = JSON.parse(localStorage.getItem('cart') || '[]');
         document.getElementById('cart-count').innerText = cart.length;
@@ -48,11 +91,9 @@
         cart.push({ id, name, price });
         localStorage.setItem('cart', JSON.stringify(cart));
         updateCartCount();
-        alert('Товар добавлен в корзину!');
+        alert('Товар «' + name + '» добавлен в корзину!');
     }
-
     updateCartCount();
 </script>
-
 </body>
 </html>
