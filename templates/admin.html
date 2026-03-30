@@ -5,10 +5,33 @@
     <title>Админ-панель — Pro Hockey Store</title>
     <link rel="stylesheet" href="/static/style.css">
     <style>
-        .edit-input { width: 100%; padding: 5px; margin: 2px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; }
-        .edit-area { width: 100%; min-height: 60px; font-family: inherit; }
-        .save-btn { background-color: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-bottom: 5px; width: 100%; }
-        .save-btn:hover { background-color: #218838; }
+        /* Фикс дизайна админки */
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; }
+        header { background-color: #1a1a1a; color: white; padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; }
+        header a { color: white; text-decoration: none; font-weight: bold; font-size: 0.9rem; }
+
+        .admin-container { padding: 20px 5%; display: flex; flex-wrap: wrap; gap: 20px; }
+        .form-section { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); flex: 1; min-width: 300px; }
+
+        h2 { margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+
+        input, select, textarea {
+            width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-family: inherit;
+        }
+
+        .btn { background: #e63946; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; transition: 0.2s; }
+        .btn:hover { background: #c12e3a; }
+        .btn-secondary { background: #457b9d; }
+
+        /* Таблица товаров */
+        .table-container { padding: 0 5%; margin-top: 30px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background: #f8f9fa; color: #666; font-size: 0.9rem; }
+
+        .edit-row input, .edit-row textarea, .edit-row select { font-size: 0.85rem; padding: 5px; margin: 2px 0; }
+        .save-btn { background: #28a745; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; width: 100%; margin-bottom: 5px; }
+        .del-btn { background: #dc3545; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; width: 100%; }
     </style>
 </head>
 <body>
@@ -21,93 +44,85 @@
     </nav>
 </header>
 
-<div style="display: flex; flex-wrap: wrap; gap: 20px; padding: 20px 5%;">
-
-    <!-- 1. УПРАВЛЕНИЕ КАТЕГОРИЯМИ -->
-    <div class="form-container" style="flex: 1; min-width: 300px;">
-        <h2>Создать категорию</h2>
+<div class="admin-container">
+    <!-- 1. КАТЕГОРИИ -->
+    <div class="form-section">
+        <h2>Категории</h2>
         <form action="/admin/category/add" method="post">
-            <input type="text" name="name" placeholder="Название (например, Клюшки)" required>
-            <button type="submit" class="btn btn-secondary">Создать категорию</button>
+            <input type="text" name="name" placeholder="Название (Клюшки, Коньки...)" required>
+            <button type="submit" class="btn btn-secondary">Создать</button>
         </form>
-
-        <div style="margin-top: 20px; text-align: left;">
-            <h4>Список категорий:</h4>
-            <ul style="list-style: none; padding: 0;">
-                {% for cat in categories %}
-                    <li style="padding: 10px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
-                        <span><b>{{ cat.name }}</b> <small>(ID: {{ cat.id }})</small></span>
-                        <form action="/admin/category/delete/{{ cat.id }}" method="post" onsubmit="return confirm('Удалить категорию? Все товары в ней исчезнут!')">
-                            <button type="submit" style="background:none; border:none; color:#ff4d4d; cursor:pointer;">Удалить ✖</button>
-                        </form>
-                    </li>
-                {% else %}
-                    <li style="color: gray;">Категорий нет</li>
-                {% endfor %}
-            </ul>
+        <div style="margin-top: 15px;">
+            {% for cat in categories %}
+                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #eee;">
+                    <span>{{ cat.name }} <small>(ID:{{ cat.id }})</small></span>
+                    <form action="/admin/category/delete/{{ cat.id }}" method="post" onsubmit="return confirm('Удалить категорию и ВСЕ товары в ней?')">
+                        <button type="submit" style="background:none; border:none; color:red; cursor:pointer;">✖</button>
+                    </form>
+                </div>
+            {% endfor %}
         </div>
     </div>
 
-    <!-- 2. ДОБАВЛЕНИЕ НОВОГО ТОВАРА -->
-    <div class="form-container" style="flex: 2; min-width: 400px;">
-        <h2>Добавить новый товар</h2>
+    <!-- 2. НОВЫЙ ТОВАР -->
+    <div class="form-section" style="flex: 2;">
+        <h2>Добавить товар</h2>
         <form action="/admin/add" method="post">
-            <input type="text" name="name" placeholder="Название товара" required>
-            <input type="number" step="0.01" name="price" placeholder="Цена в BYN" required>
-            <input type="url" name="img" placeholder="Ссылка на фото (URL)" required>
-            <textarea name="desc" placeholder="Описание товара..." rows="3"></textarea>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" name="name" placeholder="Название" required style="flex: 2;">
+                <input type="number" step="0.01" name="price" placeholder="Цена" required style="flex: 1;">
+            </div>
+            <input type="url" name="img" placeholder="URL фото" required>
+            <textarea name="desc" placeholder="Описание..." rows="2"></textarea>
             <select name="category_id" required>
                 <option value="" disabled selected>Выберите категорию</option>
                 {% for cat in categories %}
                     <option value="{{ cat.id }}">{{ cat.name }}</option>
                 {% endfor %}
             </select>
-            <button type="submit" class="btn">Добавить товар</button>
+            <button type="submit" class="btn">Добавить в базу</button>
         </form>
     </div>
 </div>
 
-<!-- 3. СПИСОК ТОВАРОВ С РЕДАКТИРОВАНИЕМ -->
-<div style="padding: 0 5%; margin-top: 40px; overflow-x: auto;">
-    <h2>Товары в базе (редактирование)</h2>
+<!-- 3. СПИСОК ТОВАРОВ -->
+<div class="table-container">
+    <h2>Товары в базе</h2>
     <table>
         <thead>
             <tr>
-                <th style="width: 100px;">Фото</th>
-                <th>Данные товара</th>
-                <th>Категория</th>
-                <th>Цена</th>
-                <th style="width: 150px;">Действие</th>
+                <th>Фото</th>
+                <th>Данные товара / Описание</th>
+                <th style="width: 150px;">Категория</th>
+                <th style="width: 100px;">Цена</th>
+                <th style="width: 120px;">Действие</th>
             </tr>
         </thead>
         <tbody>
             {% for p in products %}
-            <tr>
+            <tr class="edit-row">
                 <form action="/admin/edit/{{ p.id }}" method="post">
-                    <td>
-                        <img src="{{ p.image_url }}" style="height: 60px; border-radius: 4px; display: block; margin-bottom: 5px;">
-                        <input type="url" name="img" value="{{ p.image_url }}" class="edit-input" title="Ссылка на фото">
-                    </td>
-                    <td>
-                        <input type="text" name="name" value="{{ p.name }}" class="edit-input" style="font-weight: bold;">
-                        <textarea name="desc" class="edit-input edit-area">{{ p.description or '' }}</textarea>
-                    </td>
-                    <td>
-                        <select name="category_id" class="edit-input">
-                            {% for cat in categories %}
-                                <option value="{{ cat.id }}" {% if p.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
-                            {% endfor %}
-                        </select>
-                    </td>
-                    <td>
-                        <input type="number" step="0.01" name="price" value="{{ p.price }}" class="edit-input">
-                    </td>
-                    <td>
-                        <button type="submit" class="save-btn">💾 Сохранить</button>
-                    </form> <!-- Конец формы редактирования -->
-
-                    <form action="/admin/delete/{{ p.id }}" method="post" onsubmit="return confirm('Точно удалить?')">
-                        <button type="submit" style="background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; width: 100%;">🗑 Удалить</button>
+                <td>
+                    <img src="{{ p.image_url }}" style="height: 50px; border-radius: 4px; display: block; margin-bottom: 5px;">
+                    <input type="text" name="img" value="{{ p.image_url }}" title="URL фото">
+                </td>
+                <td>
+                    <input type="text" name="name" value="{{ p.name }}" style="font-weight: bold;">
+                    <textarea name="desc" rows="2">{{ p.description or '' }}</textarea>
+                </td>
+                <td>
+                    <select name="category_id">
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if p.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td><input type="number" step="0.01" name="price" value="{{ p.price }}"></td>
+                <td>
+                    <button type="submit" class="save-btn">Сохранить</button>
+                    </form>
+                    <form action="/admin/delete/{{ p.id }}" method="post" onsubmit="return confirm('Удалить товар?')">
+                        <button type="submit" class="del-btn">Удалить</button>
                     </form>
                 </td>
             </tr>
@@ -117,12 +132,11 @@
 </div>
 
 <!-- 4. ЗАКАЗЫ -->
-<div style="padding: 50px 5%; background: #e9ecef; margin-top: 50px;">
+<div style="padding: 40px 5%; background: #e9ecef; margin-top: 40px;">
     <h2>📥 Поступившие заказы</h2>
-    <table style="background: white;">
+    <table>
         <thead>
             <tr>
-                <th>ID</th>
                 <th>Клиент</th>
                 <th>Телефон</th>
                 <th>Товары</th>
@@ -132,13 +146,12 @@
         <tbody>
             {% for o in orders %}
             <tr>
-                <td>#{{ o.id }}</td>
                 <td><b>{{ o.name }}</b></td>
                 <td>{{ o.phone }}</td>
                 <td style="white-space: pre-line; font-size: 0.85rem;">{{ o.items }}</td>
                 <td>
                     <form action="/admin/order/delete/{{ o.id }}" method="post">
-                        <button type="submit" style="background: #6c757d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Очистить</button>
+                        <button type="submit" class="del-btn" style="background:#6c757d;">Очистить</button>
                     </form>
                 </td>
             </tr>
