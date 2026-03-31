@@ -170,5 +170,15 @@ async def logout(request: Request):
     return RedirectResponse(url="/")
 
 
+@app.post("/admin/order/delete/{o_id}")
+async def delete_order(o_id: int, db: Session = Depends(get_db)):
+    # Ищем заказ в базе по его ID
+    order = db.query(Order).filter(Order.id == o_id).first()
+    if order:
+        db.delete(order)  # Удаляем
+        db.commit()  # Сохраняем изменения
+
+    # Возвращаемся обратно в админку
+    return RedirectResponse(url="/admin", status_code=303)  
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8888)
