@@ -30,12 +30,18 @@
 
         .table-container { padding: 0 5%; margin-top: 30px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }
-        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; vertical-align: top; }
         th { background: #f8f9fa; color: #666; font-size: 0.9rem; }
 
         .edit-row input, .edit-row textarea, .edit-row select { font-size: 0.85rem; padding: 5px; margin: 2px 0; }
-        .save-btn { background: #28a745; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; width: 100%; margin-bottom: 5px; }
-        .del-btn { background: #dc3545; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; width: 100%; }
+        .save-btn { background: #28a745; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; margin-bottom: 5px; font-weight: bold; }
+        .del-btn { background: #dc3545; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold; }
+
+        .variant-hint { font-size: 0.7rem; color: #888; margin-bottom: 5px; display: block; }
+
+        /* Стили для конструктора вариантов */
+        .v-row { display: flex; gap: 5px; margin-bottom: 5px; }
+        .v-row input { margin: 0; font-size: 0.85rem; }
     </style>
 </head>
 <body>
@@ -55,7 +61,7 @@
             <input type="text" name="name" placeholder="Название (Клюшки...)" required>
             <button type="submit" class="btn btn-secondary">Создать</button>
         </form>
-        <div style="margin-top: 15px; max-height: 200px; overflow-y: auto;">
+        <div style="margin-top: 15px; max-height: 150px; overflow-y: auto;">
             {% for cat in categories %}
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
                     <span>{{ cat.name }}</span>
@@ -73,7 +79,7 @@
             <input type="text" name="name" placeholder="Название (Bauer, CCM...)" required>
             <button type="submit" class="btn btn-secondary" style="background: #1d3557;">Добавить бренд</button>
         </form>
-        <div style="margin-top: 15px; max-height: 200px; overflow-y: auto;">
+        <div style="margin-top: 15px; max-height: 150px; overflow-y: auto;">
             {% for brand in brands %}
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
                     <span>{{ brand.name }}</span>
@@ -86,25 +92,34 @@
     </div>
 
     <div class="form-section" style="flex: 2;">
-        <h2>Добавить товар</h2>
-        <form action="/admin/add" method="post">
+        <h2>Добавить новый товар</h2>
+        <form action="/admin/add" method="post" onsubmit="syncVariants()">
             <div style="display: flex; gap: 10px;">
                 <input type="text" name="name" placeholder="Название товара" required style="flex: 2;">
-                <input type="number" step="0.01" name="price" placeholder="Цена" required style="flex: 1;">
+                <input type="number" step="0.01" name="price" id="base_price" placeholder="Базовая цена" required style="flex: 1;">
             </div>
-            <input type="url" name="img" placeholder="URL фото" required>
-            <textarea name="desc" placeholder="Описание..." rows="2"></textarea>
+
+            <input type="url" name="img" placeholder="URL фото (прямая ссылка)" required>
+            <textarea name="desc" placeholder="Описание товара..." rows="2"></textarea>
+
+            <div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa;">
+                <label class="variant-hint"><b>Конструктор вариантов (размеры/загибы):</b></label>
+                <div id="v-list">
+                    </div>
+                <button type="button" onclick="addVRow()" style="margin-top: 5px; background: #457b9d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">+ Добавить вариант</button>
+                <input type="hidden" name="variants" id="variants_final">
+            </div>
 
             <div style="display: flex; gap: 10px;">
                 <select name="category_id" required>
-                    <option value="" disabled selected>Категория</option>
+                    <option value="" disabled selected>Выберите категорию</option>
                     {% for cat in categories %}
                         <option value="{{ cat.id }}">{{ cat.name }}</option>
                     {% endfor %}
                 </select>
 
                 <select name="brand_id">
-                    <option value="" selected>Бренд (необязательно)</option>
+                    <option value="" selected>Выберите бренд (необязательно)</option>
                     {% for brand in brands %}
                         <option value="{{ brand.id }}">{{ brand.name }}</option>
                     {% endfor %}
@@ -114,72 +129,76 @@
             <div class="checkbox-group">
                 <input type="checkbox" name="has_specs" id="p_specs_check"
                        onchange="document.getElementById('p_specs_fields').style.display = this.checked ? 'block' : 'none'">
-                <label for="p_specs_check">Добавить выбор хвата/загиба</label>
+                <label for="p_specs_check">Дополнительные спец. параметры (хват/загиб)</label>
             </div>
 
             <div id="p_specs_fields" style="display:none;" class="specs-box">
-                <label>Хваты (через запятую):</label>
+                <label>Хваты:</label>
                 <input type="text" name="hand_options" placeholder="Левый, Правый">
-                <label>Загибы (через запятую):</label>
+                <label>Загибы:</label>
                 <input type="text" name="curve_options" placeholder="P92, P28, P88">
             </div>
 
-            <button type="submit" class="btn">Опубликовать товар</button>
+            <button type="submit" class="btn" style="margin-top: 10px;">Опубликовать товар</button>
         </form>
     </div>
 </div>
 
 <div class="table-container">
-    <h2>Товары в базе</h2>
+    <h2>Все товары в базе</h2>
     <table>
         <thead>
             <tr>
-                <th>Фото / Ссылка</th>
-                <th>Название и Описание</th>
-                <th>Параметры</th>
-                <th>Категория / Бренд / Цена</th>
-                <th>Действие</th>
+                <th style="width: 150px;">Фото</th>
+                <th>Название, Описание и Варианты</th>
+                <th>Спецификации</th>
+                <th style="width: 200px;">Категория / Цена</th>
+                <th style="width: 140px;">Действие</th>
             </tr>
         </thead>
         <tbody>
             {% for p in products %}
             <tr class="edit-row">
-                <form action="/admin/edit/{{ p.id }}" method="post">
-                <td>
-                    <img src="{{ p.image_url }}" style="height: 50px; width: 50px; object-fit: contain; border-radius: 4px; display: block; margin-bottom: 5px; background: #eee;">
-                    <input type="text" name="img" value="{{ p.image_url }}">
-                </td>
-                <td>
-                    <input type="text" name="name" value="{{ p.name }}" style="font-weight: bold;">
-                    <textarea name="desc" rows="2">{{ p.description or '' }}</textarea>
-                </td>
-                <td>
-                    <div class="checkbox-group" style="margin:0;">
-                        <input type="checkbox" name="has_specs" id="spec_{{p.id}}" {% if p.has_specs %}checked{% endif %}>
-                        <label for="spec_{{p.id}}">Спецификации</label>
-                    </div>
-                    <input type="text" name="hand_options" value="{{ p.hand_options or '' }}" placeholder="Хваты">
-                    <input type="text" name="curve_options" value="{{ p.curve_options or '' }}" placeholder="Загибы">
-                </td>
-                <td>
-                    <select name="category_id">
-                        {% for cat in categories %}
-                            <option value="{{ cat.id }}" {% if p.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <select name="brand_id">
-                        <option value="">Без бренда</option>
-                        {% for brand in brands %}
-                            <option value="{{ brand.id }}" {% if p.brand_id == brand.id %}selected{% endif %}>{{ brand.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <input type="number" step="0.01" name="price" value="{{ p.price }}">
-                </td>
-                <td>
-                    <button type="submit" class="save-btn">Сохранить</button>
-                    </form>
-                    <form action="/admin/delete/{{ p.id }}" method="post" onsubmit="return confirm('Удалить товар?')">
-                        <button type="submit" class="del-btn">Удалить</button>
+                <form action="/admin/edit/{{ p.id }}" method="post" id="edit_form_{{ p.id }}">
+                    <td>
+                        <img src="{{ p.image_url }}" style="height: 60px; width: 60px; object-fit: contain; border-radius: 4px; display: block; margin-bottom: 5px; background: #eee; border: 1px solid #ddd;">
+                        <input type="text" name="img" value="{{ p.image_url }}" placeholder="URL фото">
+                    </td>
+                    <td>
+                        <input type="text" name="name" value="{{ p.name }}" style="font-weight: bold; font-size: 1rem;">
+                        <textarea name="desc" rows="2" placeholder="Описание">{{ p.description or '' }}</textarea>
+                        <textarea name="variants" rows="2" placeholder="Варианты: Назв (цена); ...">{{ p.variants or '' }}</textarea>
+                    </td>
+                    <td>
+                        <div class="checkbox-group" style="margin:0 0 5px 0;">
+                            <input type="checkbox" name="has_specs" id="spec_{{p.id}}" {% if p.has_specs %}checked{% endif %}>
+                            <label for="spec_{{p.id}}">Вкл. хват</label>
+                        </div>
+                        <input type="text" name="hand_options" value="{{ p.hand_options or '' }}" placeholder="Хваты">
+                        <input type="text" name="curve_options" value="{{ p.curve_options or '' }}" placeholder="Загибы">
+                    </td>
+                    <td>
+                        <select name="category_id">
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}" {% if p.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="brand_id">
+                            <option value="">Без бренда</option>
+                            {% for brand in brands %}
+                                <option value="{{ brand.id }}" {% if p.brand_id == brand.id %}selected{% endif %}>{{ brand.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div style="display: flex; align-items: center; gap: 5px; margin-top: 5px;">
+                            <input type="number" step="0.01" name="price" value="{{ p.price }}" style="font-weight: bold; color: #e63946;">
+                            <span style="font-size: 0.8rem; font-weight: bold;">BYN</span>
+                        </div>
+                    </td>
+                </form> <td>
+                    <button type="submit" form="edit_form_{{ p.id }}" class="save-btn">💾 Сохранить</button>
+
+                    <form action="/admin/delete/{{ p.id }}" method="post" onsubmit="return confirm('Удалить товар безвозвратно?')">
+                        <button type="submit" class="del-btn">🗑 Удалить</button>
                     </form>
                 </td>
             </tr>
@@ -188,26 +207,26 @@
     </table>
 </div>
 
-<div style="padding: 40px 5%; background: #e9ecef; margin-top: 40px;">
-    <h2>📥 Поступившие заказы</h2>
+<div style="padding: 40px 5%; background: #e9ecef; margin-top: 40px; border-top: 2px solid #dee2e6;">
+    <h2 style="color: #1a1a1a;">📥 Поступившие заказы</h2>
     <table>
         <thead>
             <tr>
                 <th>Клиент</th>
                 <th>Телефон</th>
-                <th>Заказ</th>
-                <th>Действие</th>
+                <th>Состав заказа</th>
+                <th style="width: 100px;">Действие</th>
             </tr>
         </thead>
         <tbody>
             {% for o in orders %}
             <tr>
                 <td><b>{{ o.name }}</b></td>
-                <td>{{ o.phone }}</td>
-                <td style="white-space: pre-line; font-size: 0.85rem;">{{ o.items }}</td>
+                <td><a href="tel:{{ o.phone }}" style="color: #457b9d; text-decoration: none; font-weight: bold;">{{ o.phone }}</a></td>
+                <td style="white-space: pre-line; font-size: 0.85rem; background: #fff; border-radius: 4px; padding: 10px; border: 1px solid #ddd;">{{ o.items }}</td>
                 <td>
                     <form action="/admin/order/delete/{{ o.id }}" method="post">
-                        <button type="submit" class="del-btn" style="background:#6c757d;">Очистить</button>
+                        <button type="submit" class="del-btn" style="background:#6c757d; font-size: 0.7rem;">УДАЛИТЬ</button>
                     </form>
                 </td>
             </tr>
@@ -215,6 +234,36 @@
         </tbody>
     </table>
 </div>
+
+<script>
+    // Логика конструктора вариантов
+    function addVRow() {
+        const list = document.getElementById('v-list');
+        const price = document.getElementById('base_price').value || "";
+        const div = document.createElement('div');
+        div.className = 'v-row';
+        div.innerHTML = `
+            <input type="text" placeholder="Название (напр. 40 P29 L)" class="v-n" style="flex:2">
+            <input type="number" placeholder="Цена" class="v-p" value="${price}" style="flex:1">
+            <button type="button" onclick="this.parentElement.remove()" style="background:red; color:white; border:none; border-radius:4px; cursor:pointer; padding:0 8px;">✕</button>
+        `;
+        list.appendChild(div);
+    }
+
+    // Сборка данных перед отправкой формы
+    function syncVariants() {
+        const rows = document.querySelectorAll('.v-row');
+        let result = [];
+        rows.forEach(row => {
+            const name = row.querySelector('.v-n').value.trim();
+            const price = row.querySelector('.v-p').value.trim();
+            if (name) {
+                result.push(`${name} (${price})`);
+            }
+        });
+        document.getElementById('variants_final').value = result.join('; ');
+    }
+</script>
 
 </body>
 </html>
