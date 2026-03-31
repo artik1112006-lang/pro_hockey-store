@@ -44,6 +44,10 @@ class Product(Base):
     price = Column(Float, nullable=False)
     description = Column(String)
     image_url = Column(String)
+
+    # --- ДОБАВЛЕНО: Поле для хранения вариантов (размеры/цены) ---
+    variants = Column(String, nullable=True, default="")
+
     has_specs = Column(Boolean, default=False)
     hand_options = Column(String, default="")
     curve_options = Column(String, default="")
@@ -65,5 +69,5 @@ class Order(Base):
     items = Column(String)
 
 
-# Создаем таблицы (включая новую таблицу brands)
+# Создаем таблицы
 Base.metadata.create_all(bind=engine)
