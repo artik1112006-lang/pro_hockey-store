@@ -39,7 +39,6 @@
 
         .variant-hint { font-size: 0.7rem; color: #888; margin-bottom: 5px; display: block; }
 
-        /* Стили для конструктора вариантов */
         .v-row { display: flex; gap: 5px; margin-bottom: 5px; }
         .v-row input { margin: 0; font-size: 0.85rem; }
     </style>
@@ -104,8 +103,7 @@
 
             <div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa;">
                 <label class="variant-hint"><b>Конструктор вариантов (размеры/загибы):</b></label>
-                <div id="v-list">
-                    </div>
+                <div id="v-list"></div>
                 <button type="button" onclick="addVRow()" style="margin-top: 5px; background: #457b9d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">+ Добавить вариант</button>
                 <input type="hidden" name="variants" id="variants_final">
             </div>
@@ -194,9 +192,9 @@
                             <span style="font-size: 0.8rem; font-weight: bold;">BYN</span>
                         </div>
                     </td>
-                </form> <td>
+                </form>
+                <td>
                     <button type="submit" form="edit_form_{{ p.id }}" class="save-btn">💾 Сохранить</button>
-
                     <form action="/admin/delete/{{ p.id }}" method="post" onsubmit="return confirm('Удалить товар безвозвратно?')">
                         <button type="submit" class="del-btn">🗑 Удалить</button>
                     </form>
@@ -208,7 +206,7 @@
 </div>
 
 <div style="padding: 40px 5%; background: #e9ecef; margin-top: 40px; border-top: 2px solid #dee2e6;">
-    <h2 style="color: #1a1a1a;">📥 Поступившие заказы</h2>
+    <h2>📥 Поступившие заказы</h2>
     <table>
         <thead>
             <tr>
@@ -236,7 +234,6 @@
 </div>
 
 <script>
-    // Логика конструктора вариантов
     function addVRow() {
         const list = document.getElementById('v-list');
         const price = document.getElementById('base_price').value || "";
@@ -250,7 +247,6 @@
         list.appendChild(div);
     }
 
-    // Сборка данных перед отправкой формы
     function syncVariants() {
         const rows = document.querySelectorAll('.v-row');
         let result = [];
