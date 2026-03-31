@@ -15,7 +15,7 @@ TELEGRAM_CHAT_ID = "1111122600"
 
 def send_telegram_msg(text: str):
     try:
-        url = f"https://api.telegram.org{TELEGRAM_TOKEN}/sendMessage"
+        url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
         payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text, "parse_mode": "HTML"}
         requests.post(url, data=payload, timeout=10)
     except Exception as e:
@@ -28,7 +28,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI()
 app.add_middleware(SessionMiddleware, secret_key="HOCKEY_ULTRA_SAFE_KEY")
 
-ADMIN_PASSWORD = "123"
+ADMIN_PASSWORD = "2121"
 
 if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
