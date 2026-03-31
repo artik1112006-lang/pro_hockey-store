@@ -3,89 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro Hockey Store — Витрина</title>
+    <title>Pro Hockey Store — Каталог</title>
     <style>
         /* ОСНОВНЫЕ СТИЛИ */
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f7f6; margin: 0; color: #333; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f7f6; margin: 0; color: #333; min-height: 100vh; display: flex; flex-direction: column; }
 
-        /* HEADER */
         header {
-            background: #1a1a1a;
-            color: white;
-            padding: 10px 5%;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            border-bottom: 2px solid #e63946;
+            background: #1a1a1a; color: white; padding: 10px 5%;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-bottom: 2px solid #e63946;
         }
 
         .header-left { display: flex; align-items: center; gap: 15px; }
-
         .logo-wrapper {
-            width: 65px;
-            height: 65px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(255,255,255,0.05);
-            border-radius: 8px;
-            overflow: hidden;
+            width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+            background: rgba(255,255,255,0.05); border-radius: 8px; overflow: hidden;
         }
+        .logo-wrapper img { max-height: 100%; width: auto; filter: drop-shadow(0 0 5px rgba(230, 57, 70, 0.5)); }
+        .logo-text h1 { margin: 0; font-size: 1.4rem; letter-spacing: 2px; text-transform: uppercase; line-height: 1; }
+        .logo-text h1 span { color: #e63946; }
+        .logo-text small { font-size: 0.65rem; letter-spacing: 3px; color: #999; font-weight: bold; text-transform: uppercase; }
 
-        .header-left img {
-            max-height: 100%;
-            width: auto;
-            filter: drop-shadow(0 0 5px rgba(230, 57, 70, 0.5));
-            display: block;
-        }
-
-        .logo-text { display: flex; flex-direction: column; }
-        header h1 { margin: 0; font-size: 1.6rem; letter-spacing: 2px; line-height: 1; text-transform: uppercase; }
-        header h1 span { color: #e63946; }
-
-        header a {
-            color: white;
-            text-decoration: none;
-            font-weight: bold;
-            font-size: 0.9rem;
-            border: 1px solid #e63946;
-            padding: 8px 15px;
-            border-radius: 6px;
-            transition: 0.3s;
-        }
+        header a { color: white; text-decoration: none; font-weight: bold; border: 1px solid #e63946; padding: 8px 15px; border-radius: 6px; transition: 0.3s; }
         header a:hover { background: #e63946; }
 
-        /* НАВИГАЦИЯ (Категории и Бренды) */
-        .nav-section { background: white; border-bottom: 1px solid #ddd; padding: 10px 5%; }
-        .cat-nav { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; padding: 10px 0; }
+        /* НАВИГАЦИЯ И ПОИСК */
+        .nav-section { background: white; border-bottom: 1px solid #ddd; padding: 15px 5%; display: flex; flex-direction: column; gap: 10px; }
+        .filters-group { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px; }
 
+        .cat-nav { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
         .cat-btn { padding: 8px 18px; border-radius: 20px; border: 1px solid #ccc; background: white; cursor: pointer; font-weight: 600; transition: 0.3s; font-size: 0.85rem; }
-        .cat-btn:hover { border-color: #e63946; color: #e63946; }
-        .cat-btn.active { background: #e63946; color: white; border-color: #e63946; box-shadow: 0 4px 10px rgba(230, 57, 70, 0.2); }
+        .cat-btn:hover, .cat-btn.active { background: #e63946; color: white; border-color: #e63946; }
 
-        .brand-nav { border-top: 1px dashed #eee; margin-top: 5px; }
-        .brand-label { width: 100%; text-align: center; font-size: 0.7rem; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; display: block; }
+        .search-container { position: relative; margin-right: 10px; }
+        .search-input {
+            padding: 8px 15px 8px 35px; border-radius: 20px; border: 1px solid #ddd;
+            font-size: 0.85rem; width: 180px; transition: 0.3s; outline: none;
+        }
+        .search-input:focus { border-color: #e63946; width: 220px; }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #999; }
 
-        /* СЕТКА ТОВАРОВ */
-        .container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding: 40px 5%; max-width: 1400px; margin: 0 auto; }
-        .card { background: white; padding: 20px; border-radius: 16px; text-align: center; box-shadow: 0 6px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; transition: 0.3s; border: 1px solid #eee; }
+        .brand-nav { border-top: 1px dashed #eee; padding-top: 10px; width: 100%; }
+        .brand-label { font-size: 0.7rem; font-weight: bold; color: #999; text-transform: uppercase; margin-right: 10px; }
+
+        .sort-container { display: flex; align-items: center; gap: 8px; background: #f8f9fa; padding: 5px 12px; border-radius: 8px; border: 1px solid #eee; }
+        .sort-select { border: none; background: transparent; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; outline: none; }
+
+        /* КАРТОЧКИ ТОВАРОВ */
+        .container { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding: 40px 5%; max-width: 1400px; margin: 0 auto; }
+        .card { background: white; padding: 20px; border-radius: 16px; text-align: center; box-shadow: 0 6px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; transition: 0.3s; border: 1px solid #eee; cursor: pointer; height: fit-content; }
         .card:hover { transform: translateY(-8px); box-shadow: 0 12px 25px rgba(0,0,0,0.12); }
         .card img { width: 100%; height: 200px; object-fit: contain; margin-bottom: 15px; border-radius: 8px; }
-
-        .brand-tag { font-size: 0.75rem; color: #666; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
-        .category-tag { font-size: 0.85rem; color: #e63946; font-weight: bold; text-transform: uppercase; }
-
-        .card h3 { margin: 10px 0; font-size: 1.1rem; min-height: 2.4rem; display: flex; align-items: center; justify-content: center; line-height: 1.2; }
-
-        .specs { background: #fff8f8; padding: 12px; border-radius: 10px; margin: 10px 0; text-align: left; border: 1px solid #ffebeb; }
-        .specs label { font-size: 0.7rem; font-weight: bold; color: #999; text-transform: uppercase; display: block; margin-top: 5px; }
-        .specs select { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem; background: white; cursor: pointer; }
-
+        .card h3 { margin: 10px 0; font-size: 1.1rem; min-height: 2.4rem; display: flex; align-items: center; justify-content: center; }
         .price { font-size: 1.4rem; font-weight: 800; color: #e63946; margin: 15px 0; }
-        .btn { background: #e63946; color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: auto; font-size: 1rem; transition: 0.2s; }
-        .btn:hover { background: #c12e3a; box-shadow: 0 5px 15px rgba(230, 57, 70, 0.4); }
-        .no-products { grid-column: 1 / -1; text-align: center; padding: 50px; color: #999; font-size: 1.2rem; }
+        .btn { background: #e63946; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.2s; width: 100%; text-decoration: none; display: inline-block; }
+        .btn:hover { background: #c12e3a; }
+
+        /* ФУТЕР (ПОДВАЛ) */
+        footer { background: #1a1a1a; color: white; padding: 40px 5%; text-align: center; margin-top: auto; border-top: 4px solid #e63946; }
+        .tg-btn {
+            background: #0088cc; color: white; padding: 15px 30px; border-radius: 30px;
+            text-decoration: none; font-weight: bold; display: inline-flex; align-items: center;
+            gap: 10px; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,136,204,0.3);
+        }
+        .tg-btn:hover { background: #0077b5; transform: scale(1.05); }
+
+        /* МОДАЛЬНОЕ ОКНО */
+        .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; backdrop-filter: blur(8px); }
+        .modal-content { background: white; padding: 40px; border-radius: 20px; max-width: 700px; width: 90%; position: relative; text-align: center; max-height: 90vh; overflow-y: auto; }
+        .close-modal { position: absolute; right: 25px; top: 15px; font-size: 40px; cursor: pointer; color: #333; line-height: 1; }
+        .modal img { max-height: 350px; width: auto; max-width: 100%; object-fit: contain; margin-bottom: 20px; }
+        .modal p { color: #444; line-height: 1.6; text-align: left; background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid #eee; white-space: pre-line; }
     </style>
 </head>
 <body>
@@ -93,128 +81,169 @@
 <header>
     <div class="header-left">
         <div class="logo-wrapper">
-            <img src="/static/logo.png" alt="Pro Hockey Logo" onerror="this.onerror=null; this.src='https://via.placeholder.com/60';">
+            <img src="/static/logo.png" alt="Logo" onerror="this.src='https://via.placeholder.com/60?text=H'">
         </div>
         <div class="logo-text">
             <h1>PRO <span>HOCKEY</span></h1>
-            <small style="font-size: 0.7rem; letter-spacing: 3px; color: #999; font-weight: bold;">STORE</small>
+            <small>Store</small>
         </div>
     </div>
     <nav><a href="/cart">🛒 КОРЗИНА (<span id="cart-count">0</span>)</a></nav>
 </header>
 
 <div class="nav-section">
-    <div class="cat-nav">
-        <button class="cat-btn active filter-btn" data-filter="all" onclick="applyFilter('all', this, 'cat')">Все товары</button>
-        {% for cat in categories %}
-            <button class="cat-btn filter-btn" data-filter="cat-{{ cat.id }}" onclick="applyFilter('cat-{{ cat.id }}', this, 'cat')">{{ cat.name }}</button>
-        {% endfor %}
+    <div class="filters-group">
+        <div class="cat-nav">
+            <div class="search-container">
+                <span class="search-icon" style="position:absolute; left:12px; top:8px;">🔍</span>
+                <input type="text" id="productSearch" class="search-input" placeholder="Поиск товара..." onkeyup="filterItems()">
+            </div>
+            <button class="cat-btn active f-cat" onclick="setActiveFilter('all', this, 'cat')">Все товары</button>
+            {% for cat in categories %}
+                <button class="cat-btn f-cat" onclick="setActiveFilter('cat-{{ cat.id }}', this, 'cat')">{{ cat.name }}</button>
+            {% endfor %}
+        </div>
+        <div class="sort-container">
+            <span class="brand-label">Цена:</span>
+            <select class="sort-select" onchange="sortItems(this.value)">
+                <option value="default">По умолчанию</option>
+                <option value="low">Дешевле</option>
+                <option value="high">Дороже</option>
+            </select>
+        </div>
     </div>
-
     <div class="cat-nav brand-nav">
-        <span class="brand-label">Поиск по бренду</span>
-        <button class="cat-btn active filter-btn-brand" data-filter="all" onclick="applyFilter('all', this, 'brand')">Любой бренд</button>
+        <span class="brand-label">Бренды:</span>
+        <button class="cat-btn active f-brand" onclick="setActiveFilter('all', this, 'brand')">Все</button>
         {% for brand in brands %}
-            <button class="cat-btn filter-btn-brand" data-filter="brand-{{ brand.id }}" onclick="applyFilter('brand-{{ brand.id }}', this, 'brand')">{{ brand.name }}</button>
+            <button class="cat-btn f-brand" onclick="setActiveFilter('brand-{{ brand.id }}', this, 'brand')">{{ brand.name }}</button>
         {% endfor %}
     </div>
 </div>
 
-<div class="container">
+<div class="container" id="product-container">
     {% for p in products %}
-    <div class="card product-card cat-{{ p.category_id }} brand-{{ p.brand_id if p.brand_id else 'none' }}">
+    <div class="card product-card cat-{{ p.category_id }} brand-{{ p.brand_id if p.brand_id else 'none' }}"
+         data-price="{{ p.price }}"
+         onclick="handleCardClick(event, this)">
+
+        <script type="application/json" class="p-data">
+            {
+                "id": "{{ p.id }}",
+                "name": {{ p.name|tojson|safe }},
+                "img": {{ p.image_url|tojson|safe }},
+                "desc": {{ (p.description or "Описание скоро будет добавлено")|tojson|safe }},
+                "price": "{{ p.price }}"
+            }
+        </script>
+
         <img src="{{ p.image_url }}" alt="{{ p.name }}">
-
-        <div class="brand-tag">{{ p.brand.name if p.brand else '' }}</div>
-        <div class="category-tag">{{ p.category.name if p.category else 'Экипировка' }}</div>
-
-        <h3>{{ p.name }}</h3>
-
-        {% if p.has_specs %}
-        <div class="specs">
-            <label>Хват / Размер:</label>
-            <select id="hand-{{ p.id }}">
-                {% for opt in p.hand_options.split(',') %}
-                    <option value="{{ opt.strip() }}">{{ opt.strip() }}</option>
-                {% endfor %}
-            </select>
-            <label>Загиб / Полнота:</label>
-            <select id="curve-{{ p.id }}">
-                {% for opt in p.curve_options.split(',') %}
-                    <option value="{{ opt.strip() }}">{{ opt.strip() }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        {% endif %}
-
+        <div style="font-size: 0.75rem; color: #666; font-weight: bold; text-transform: uppercase;">{{ p.brand.name if p.brand else '' }}</div>
+        <div style="font-size: 0.85rem; color: #e63946; font-weight: bold; text-transform: uppercase;">{{ p.category.name if p.category else 'Спорттовары' }}</div>
+        <h3 class="product-title">{{ p.name }}</h3>
         <p class="price">{{ p.price }} BYN</p>
-
-        <button class="btn add-to-cart-btn"
-                data-id="{{ p.id }}"
-                data-name="{{ p.name }}"
-                data-price="{{ p.price }}"
-                data-specs="{{ 'true' if p.has_specs else 'false' }}">
-            В корзину
-        </button>
+        <button class="btn add-btn" data-id="{{ p.id }}">В корзину</button>
     </div>
-    {% else %}
-    <div class="no-products">Пока нет товаров. Добавьте их в админке!</div>
     {% endfor %}
 </div>
 
+<footer>
+    <h3>Следите за новинками и акциями!</h3>
+    <p style="color: #999; margin-bottom: 25px;">Подпишитесь на наш Telegram, чтобы не пропустить завоз новой экипировки.</p>
+    <a href="https://t.me/hokkeystore" target="_blank" class="tg-btn">
+        <span>✈️ Наш Telegram Канал</span>
+    </a>
+    <div style="margin-top: 30px; font-size: 0.8rem; color: #555;">
+        &copy; 2026 PRO HOCKEY STORE. Все права защищены.
+    </div>
+</footer>
+
+<div id="productModal" class="modal" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <img id="modalImg" src="" alt="">
+        <h2 id="modalTitle"></h2>
+        <p id="modalDesc"></p>
+        <h3 id="modalPrice" style="color: #e63946; font-size: 1.8rem;"></h3>
+        <button class="btn" style="max-width: 250px; margin-top: 20px;" onclick="closeModal()">Закрыть</button>
+    </div>
+</div>
+
 <script>
-    // Храним текущие фильтры
     let currentCat = 'all';
     let currentBrand = 'all';
 
-    function applyFilter(value, btn, type) {
-        // Подсветка кнопок
+    function setActiveFilter(val, btn, type) {
         if (type === 'cat') {
-            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            currentCat = value;
+            document.querySelectorAll('.f-cat').forEach(b => b.classList.remove('active'));
+            currentCat = val;
         } else {
-            document.querySelectorAll('.filter-btn-brand').forEach(b => b.classList.remove('active'));
-            currentBrand = value;
+            document.querySelectorAll('.f-brand').forEach(b => b.classList.remove('active'));
+            currentBrand = val;
         }
         btn.classList.add('active');
+        filterItems();
+    }
 
-        // Логика фильтрации
+    function filterItems() {
+        const searchQuery = document.getElementById('productSearch').value.toLowerCase();
         document.querySelectorAll('.product-card').forEach(card => {
-            const matchCat = (currentCat === 'all' || card.classList.contains(currentCat));
-            const matchBrand = (currentBrand === 'all' || card.classList.contains(currentBrand));
-
-            card.style.display = (matchCat && matchBrand) ? 'flex' : 'none';
+            const title = card.querySelector('.product-title').innerText.toLowerCase();
+            const mSearch = title.includes(searchQuery);
+            const mCat = (currentCat === 'all' || card.classList.contains(currentCat));
+            const mBrand = (currentBrand === 'all' || card.classList.contains(currentBrand));
+            card.style.display = (mSearch && mCat && mBrand) ? 'flex' : 'none';
         });
     }
 
-    function updateCartUI() {
+    function sortItems(order) {
+        const container = document.getElementById('product-container');
+        const cards = Array.from(container.getElementsByClassName('product-card'));
+        cards.sort((a, b) => {
+            let pA = parseFloat(a.dataset.price);
+            let pB = parseFloat(b.dataset.price);
+            return order === 'low' ? pA - pB : pB - pA;
+        });
+        if (order !== 'default') cards.forEach(c => container.appendChild(c));
+    }
+
+    function handleCardClick(e, card) {
+        const data = JSON.parse(card.querySelector('.p-data').textContent);
+        if (e.target.classList.contains('add-btn')) {
+            addToCart(data.id, data.name, data.price);
+        } else {
+            openModal(data);
+        }
+    }
+
+    function openModal(data) {
+        document.getElementById('modalTitle').innerText = data.name;
+        document.getElementById('modalImg').src = data.img;
+        document.getElementById('modalDesc').innerText = data.desc;
+        document.getElementById('modalPrice').innerText = data.price + " BYN";
+        document.getElementById('productModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        document.getElementById('productModal').style.display = 'none';
+        document.body.style.overflow = 'auto';
+    }
+
+    function addToCart(id, name, price) {
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        cart.push({ id, name, price });
+        localStorage.setItem('cart', JSON.stringify(cart));
+        updateCartCount();
+        alert('Добавлено: ' + name);
+    }
+
+    function updateCartCount() {
         const cart = JSON.parse(localStorage.getItem('cart') || '[]');
         document.getElementById('cart-count').innerText = cart.length;
     }
 
-    document.querySelectorAll('.add-to-cart-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            const id = this.getAttribute('data-id');
-            let name = this.getAttribute('data-name');
-            const price = this.getAttribute('data-price');
-            const hasSpecs = this.getAttribute('data-specs') === 'true';
-
-            if (hasSpecs) {
-                const hand = document.getElementById('hand-' + id).value;
-                const curve = document.getElementById('curve-' + id).value;
-                name += ` [${hand}, ${curve}]`;
-            }
-
-            let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-            cart.push({ id, name, price });
-            localStorage.setItem('cart', JSON.stringify(cart));
-
-            updateCartUI();
-            alert('Добавлено в корзину:\n' + name);
-        });
-    });
-
-    updateCartUI();
+    updateCartCount();
 </script>
 </body>
 </html>
