@@ -213,7 +213,7 @@
                 <th>Клиент</th>
                 <th>Телефон</th>
                 <th>Состав заказа</th>
-                <th style="width: 100px;">Действие</th>
+                <th style="width: 120px;">Действие</th>
             </tr>
         </thead>
         <tbody>
@@ -223,8 +223,8 @@
                 <td><a href="tel:{{ o.phone }}" style="color: #457b9d; text-decoration: none; font-weight: bold;">{{ o.phone }}</a></td>
                 <td style="white-space: pre-line; font-size: 0.85rem; background: #fff; border-radius: 4px; padding: 10px; border: 1px solid #ddd;">{{ o.items }}</td>
                 <td>
-                    <form action="/admin/order/delete/{{ o.id }}" method="post">
-                        <button type="submit" class="del-btn" style="background:#6c757d; font-size: 0.7rem;">УДАЛИТЬ</button>
+                    <form action="/admin/order/delete/{{ o.id }}" method="post" onsubmit="return confirm('Удалить этот заказ из списка?')">
+                        <button type="submit" class="del-btn" style="background:#6c757d; font-size: 0.75rem; cursor: pointer; padding: 10px;">УДАЛИТЬ</button>
                     </form>
                 </td>
             </tr>
