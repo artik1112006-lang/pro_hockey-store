@@ -13,7 +13,6 @@ from database import SessionLocal, Product, Order, Category, Brand, Base, engine
 TELEGRAM_TOKEN = "8686923435:AAEHy9YL6C-fqGejUNZTYDTJ9I9ismbTCMo"
 TELEGRAM_CHAT_ID = "1111122600"
 
-
 def send_telegram_msg(text: str):
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
@@ -22,8 +21,6 @@ def send_telegram_msg(text: str):
     except Exception as e:
         print(f"⚠️ Ошибка Telegram: {e}")
 
-
-# Создаем таблицы
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
@@ -35,7 +32,6 @@ if os.path.exists("static"):
     app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
-
 def get_db():
     db = SessionLocal()
     try:
@@ -43,19 +39,16 @@ def get_db():
     finally:
         db.close()
 
-
 # --- МОДЕЛИ ДАННЫХ ДЛЯ КОРЗИНЫ ---
 class CartItem(BaseModel):
     name: str
     price: str
     img: Optional[str] = None
 
-
 class OrderData(BaseModel):
     customer: dict
     items: List[CartItem]
     total: str
-
 
 # --- КЛИЕНТСКАЯ ЧАСТЬ ---
 
@@ -76,32 +69,31 @@ async def index(request: Request, q: str = None, category_id: int = None, db: Se
         }
     )
 
-
 @app.get("/cart", response_class=HTMLResponse)
 async def cart_page(request: Request):
     return templates.TemplateResponse(request=request, name="cart.html", context={})
 
-
 @app.post("/checkout")
 async def checkout(order: OrderData, db: Session = Depends(get_db)):
-    name = order.customer.get('name')
-    phone = order.customer.get('phone')
-    items_list = ", ".join([f"{item.name} ({item.price} BYN)" for item in order.items])
+    try:
+        name = order.customer.get('name', 'Аноним')
+        phone = order.customer.get('phone', 'Нет телефона')
+        items_list = ", ".join([f"{item.name} ({item.price} BYN)" for item in order.items])
 
-    new_order = Order(name=name, phone=phone, items=items_list)
-    db.add(new_order)
-    db.commit()
+        new_order = Order(name=name, phone=phone, items=items_list)
+        db.add(new_order)
+        db.commit()
 
-    msg = f"<b>🚨 НОВЫЙ ЗАКАЗ!</b>\n👤 {name}\n📞 {phone}\n📦 {items_list}\n💰 Итого: {order.total} BYN"
-    send_telegram_msg(msg)
-
-    return {"status": "success"}
-
+        msg = f"<b>🚨 НОВЫЙ ЗАКАЗ!</b>\n👤 {name}\n📞 {phone}\n📦 {items_list}\n💰 Итого: {order.total} BYN"
+        send_telegram_msg(msg)
+        return {"status": "success"}
+    except Exception as e:
+        print(f"Ошибка оформления: {e}")
+        return {"status": "error", "message": str(e)}
 
 @app.get("/order_success", response_class=HTMLResponse)
 async def order_success(request: Request):
     return templates.TemplateResponse(request=request, name="order_success.html", context={})
-
 
 # --- АДМИН-ПАНЕЛЬ ---
 
@@ -119,37 +111,38 @@ async def admin(request: Request, db: Session = Depends(get_db)):
         }
     )
 
-# --- УПРАВЛЕНИЕ КАТЕГОРИЯМИ ---
-@app.post("/admin/category/add")
-async def add_category(name: str = Form(...), db: Session = Depends(get_db)):
-    db.add(Category(name=name))
-    db.commit()
-    return RedirectResponse(url="/admin", status_code=303)
+# --- УПРАВЛЕНИЕ ЗАКАЗАМИ ---
 
-@app.post("/admin/category/delete/{c_id}")
-async def delete_category(c_id: int, db: Session = Depends(get_db)):
-    cat = db.query(Category).filter(Category.id == c_id).first()
-    if cat:
-        db.delete(cat)
+@app.post("/admin/order/delete/{o_id}")
+async def delete_order(o_id: int, request: Request, db: Session = Depends(get_db)):
+    if not request.session.get("admin"):
+        return RedirectResponse(url="/login")
+
+    order = db.query(Order).filter(Order.id == o_id).first()
+    if order:
+        db.delete(order)
         db.commit()
-    return RedirectResponse(url="/admin", status_code=303)
-
-# --- УПРАВЛЕНИЕ БРЕНДАМИ ---
-@app.post("/admin/brand/add")
-async def add_brand(name: str = Form(...), db: Session = Depends(get_db)):
-    db.add(Brand(name=name))
-    db.commit()
-    return RedirectResponse(url="/admin", status_code=303)
-
-@app.post("/admin/brand/delete/{b_id}")
-async def delete_brand(b_id: int, db: Session = Depends(get_db)):
-    brand = db.query(Brand).filter(Brand.id == b_id).first()
-    if brand:
-        db.delete(brand)
-        db.commit()
+        print(f"✅ Заказ #{o_id} удален")
     return RedirectResponse(url="/admin", status_code=303)
 
 # --- УПРАВЛЕНИЕ ТОВАРАМИ ---
+
+@app.post("/admin/edit/{p_id}")
+async def edit_product(p_id: int, name: str = Form(...), price: float = Form(...), img: str = Form(...),
+                      desc: str = Form(""), category_id: int = Form(...), variants: str = Form(""),
+                      brand_id: Optional[int] = Form(None), db: Session = Depends(get_db)):
+    p = db.query(Product).filter(Product.id == p_id).first()
+    if p:
+        p.name = name
+        p.price = price
+        p.image_url = img
+        p.description = desc
+        p.category_id = category_id
+        p.variants = variants
+        p.brand_id = brand_id
+        db.commit()
+    return RedirectResponse(url="/admin", status_code=303)
+
 @app.post("/admin/add")
 async def add_product(name: str = Form(...), price: float = Form(...), img: str = Form(...),
                       desc: str = Form(""), category_id: int = Form(...), variants: str = Form(""),
@@ -161,18 +154,29 @@ async def add_product(name: str = Form(...), price: float = Form(...), img: str 
     db.commit()
     return RedirectResponse(url="/admin", status_code=303)
 
-
 @app.post("/admin/delete/{p_id}")
 async def delete_product(p_id: int, db: Session = Depends(get_db)):
     p = db.query(Product).filter(Product.id == p_id).first()
     if p: db.delete(p); db.commit()
     return RedirectResponse(url="/admin", status_code=303)
 
+# --- КАТЕГОРИИ И БРЕНДЫ ---
+
+@app.post("/admin/category/add")
+async def add_category(name: str = Form(...), db: Session = Depends(get_db)):
+    db.add(Category(name=name)); db.commit()
+    return RedirectResponse(url="/admin", status_code=303)
+
+@app.post("/admin/brand/add")
+async def add_brand(name: str = Form(...), db: Session = Depends(get_db)):
+    db.add(Brand(name=name)); db.commit()
+    return RedirectResponse(url="/admin", status_code=303)
+
+# --- АВТОРИЗАЦИЯ ---
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     return templates.TemplateResponse(request=request, name="login.html", context={})
-
 
 @app.post("/login")
 async def login(request: Request, password: str = Form(...)):
@@ -181,19 +185,10 @@ async def login(request: Request, password: str = Form(...)):
         return RedirectResponse(url="/admin", status_code=303)
     return HTMLResponse("<h2>Ошибка!</h2><a href='/login'>Назад</a>")
 
-
 @app.get("/logout")
 async def logout(request: Request):
     request.session.clear()
     return RedirectResponse(url="/")
-
-
-@app.post("/admin/order/delete/{o_id}")
-async def delete_order(o_id: int, db: Session = Depends(get_db)):
-    order = db.query(Order).filter(Order.id == o_id).first()
-    if order: db.delete(order); db.commit()
-    return RedirectResponse(url="/admin", status_code=303)
-
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=9999)
