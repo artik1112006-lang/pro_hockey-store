@@ -9,8 +9,8 @@
         header { background-color: #1a1a1a; color: white; padding: 1rem 5%; display: flex; justify-content: space-between; align-items: center; }
         header a { color: white; text-decoration: none; font-weight: bold; font-size: 0.9rem; }
 
-        .admin-container { padding: 20px 5%; display: flex; flex-wrap: wrap; gap: 20px; }
-        .form-section { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); flex: 1; min-width: 300px; }
+        .admin-container { padding: 20px 5%; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+        .form-section { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); flex: 1; min-width: 280px; }
 
         h2 { margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid #eee; padding-bottom: 10px; }
 
@@ -21,7 +21,6 @@
         .checkbox-group { display: flex; align-items: center; gap: 10px; margin: 10px 0; font-size: 0.9rem; color: #555; }
         .checkbox-group input { width: auto; margin: 0; cursor: pointer; }
 
-        /* Стили для настройки спец. параметров товара */
         .specs-box { background: #fff5f5; padding: 10px; border-radius: 8px; border: 1px solid #ffe3e3; margin-top: 5px; }
         .specs-box label { font-size: 0.75rem; font-weight: bold; color: #e63946; }
 
@@ -50,14 +49,13 @@
 </header>
 
 <div class="admin-container">
-    <!-- 1. КАТЕГОРИИ (Просто список) -->
     <div class="form-section">
         <h2>Категории</h2>
         <form action="/admin/category/add" method="post">
             <input type="text" name="name" placeholder="Название (Клюшки...)" required>
             <button type="submit" class="btn btn-secondary">Создать</button>
         </form>
-        <div style="margin-top: 15px;">
+        <div style="margin-top: 15px; max-height: 200px; overflow-y: auto;">
             {% for cat in categories %}
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
                     <span>{{ cat.name }}</span>
@@ -69,52 +67,77 @@
         </div>
     </div>
 
-    <!-- 2. НОВЫЙ ТОВАР (С индивидуальными параметрами) -->
+    <div class="form-section">
+        <h2>Бренды</h2>
+        <form action="/admin/brand/add" method="post">
+            <input type="text" name="name" placeholder="Название (Bauer, CCM...)" required>
+            <button type="submit" class="btn btn-secondary" style="background: #1d3557;">Добавить бренд</button>
+        </form>
+        <div style="margin-top: 15px; max-height: 200px; overflow-y: auto;">
+            {% for brand in brands %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed #eee;">
+                    <span>{{ brand.name }}</span>
+                    <form action="/admin/brand/delete/{{ brand.id }}" method="post" onsubmit="return confirm('Удалить бренд?')">
+                        <button type="submit" style="background:none; border:none; color:red; cursor:pointer;">✖</button>
+                    </form>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
     <div class="form-section" style="flex: 2;">
         <h2>Добавить товар</h2>
         <form action="/admin/add" method="post">
             <div style="display: flex; gap: 10px;">
-                <input type="text" name="name" placeholder="Название" required style="flex: 2;">
+                <input type="text" name="name" placeholder="Название товара" required style="flex: 2;">
                 <input type="number" step="0.01" name="price" placeholder="Цена" required style="flex: 1;">
             </div>
             <input type="url" name="img" placeholder="URL фото" required>
             <textarea name="desc" placeholder="Описание..." rows="2"></textarea>
 
-            <select name="category_id" required>
-                <option value="" disabled selected>Выберите категорию</option>
-                {% for cat in categories %}
-                    <option value="{{ cat.id }}">{{ cat.name }}</option>
-                {% endfor %}
-            </select>
+            <div style="display: flex; gap: 10px;">
+                <select name="category_id" required>
+                    <option value="" disabled selected>Категория</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <select name="brand_id">
+                    <option value="" selected>Бренд (необязательно)</option>
+                    {% for brand in brands %}
+                        <option value="{{ brand.id }}">{{ brand.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
             <div class="checkbox-group">
                 <input type="checkbox" name="has_specs" id="p_specs_check"
                        onchange="document.getElementById('p_specs_fields').style.display = this.checked ? 'block' : 'none'">
-                <label for="p_specs_check">Добавить хват/загиб для этого товара</label>
+                <label for="p_specs_check">Добавить выбор хвата/загиба</label>
             </div>
 
             <div id="p_specs_fields" style="display:none;" class="specs-box">
-                <label>Варианты 1 (через запятую):</label>
-                <input type="text" name="hand_options" placeholder="Напр: Левый, Правый">
-                <label>Варианты 2 (через запятую):</label>
-                <input type="text" name="curve_options" placeholder="Напр: P92, P28, P88">
+                <label>Хваты (через запятую):</label>
+                <input type="text" name="hand_options" placeholder="Левый, Правый">
+                <label>Загибы (через запятую):</label>
+                <input type="text" name="curve_options" placeholder="P92, P28, P88">
             </div>
 
-            <button type="submit" class="btn">Добавить в базу</button>
+            <button type="submit" class="btn">Опубликовать товар</button>
         </form>
     </div>
 </div>
 
-<!-- 3. СПИСОК ТОВАРОВ -->
 <div class="table-container">
     <h2>Товары в базе</h2>
     <table>
         <thead>
             <tr>
-                <th>Фото</th>
-                <th>Данные / Описание</th>
-                <th>Параметры (хват/загиб)</th>
-                <th>Категория / Цена</th>
+                <th>Фото / Ссылка</th>
+                <th>Название и Описание</th>
+                <th>Параметры</th>
+                <th>Категория / Бренд / Цена</th>
                 <th>Действие</th>
             </tr>
         </thead>
@@ -123,7 +146,7 @@
             <tr class="edit-row">
                 <form action="/admin/edit/{{ p.id }}" method="post">
                 <td>
-                    <img src="{{ p.image_url }}" style="height: 50px; border-radius: 4px; display: block; margin-bottom: 5px;">
+                    <img src="{{ p.image_url }}" style="height: 50px; width: 50px; object-fit: contain; border-radius: 4px; display: block; margin-bottom: 5px; background: #eee;">
                     <input type="text" name="img" value="{{ p.image_url }}">
                 </td>
                 <td>
@@ -133,7 +156,7 @@
                 <td>
                     <div class="checkbox-group" style="margin:0;">
                         <input type="checkbox" name="has_specs" id="spec_{{p.id}}" {% if p.has_specs %}checked{% endif %}>
-                        <label for="spec_{{p.id}}">Вкл.</label>
+                        <label for="spec_{{p.id}}">Спецификации</label>
                     </div>
                     <input type="text" name="hand_options" value="{{ p.hand_options or '' }}" placeholder="Хваты">
                     <input type="text" name="curve_options" value="{{ p.curve_options or '' }}" placeholder="Загибы">
@@ -144,12 +167,18 @@
                             <option value="{{ cat.id }}" {% if p.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
                         {% endfor %}
                     </select>
+                    <select name="brand_id">
+                        <option value="">Без бренда</option>
+                        {% for brand in brands %}
+                            <option value="{{ brand.id }}" {% if p.brand_id == brand.id %}selected{% endif %}>{{ brand.name }}</option>
+                        {% endfor %}
+                    </select>
                     <input type="number" step="0.01" name="price" value="{{ p.price }}">
                 </td>
                 <td>
-                    <button type="submit" class="save-btn">ОК</button>
+                    <button type="submit" class="save-btn">Сохранить</button>
                     </form>
-                    <form action="/admin/delete/{{ p.id }}" method="post" onsubmit="return confirm('Удалить?')">
+                    <form action="/admin/delete/{{ p.id }}" method="post" onsubmit="return confirm('Удалить товар?')">
                         <button type="submit" class="del-btn">Удалить</button>
                     </form>
                 </td>
@@ -159,7 +188,6 @@
     </table>
 </div>
 
-<!-- 4. ЗАКАЗЫ -->
 <div style="padding: 40px 5%; background: #e9ecef; margin-top: 40px;">
     <h2>📥 Поступившие заказы</h2>
     <table>
@@ -167,7 +195,7 @@
             <tr>
                 <th>Клиент</th>
                 <th>Телефон</th>
-                <th>Товары (включая выбор)</th>
+                <th>Заказ</th>
                 <th>Действие</th>
             </tr>
         </thead>
