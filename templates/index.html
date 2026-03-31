@@ -6,53 +6,76 @@
     <title>Pro Hockey Store — Каталог</title>
     <style>
         /* ОСНОВНЫЕ СТИЛИ */
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f7f6; margin: 0; color: #333; min-height: 100vh; display: flex; flex-direction: column; }
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background-color: #f4f7f6; 
+            margin: 0; 
+            color: #333; 
+            min-height: 100vh; 
+            display: flex; 
+            flex-direction: column; 
+        }
 
         header {
             background: #1a1a1a; color: white; padding: 10px 5%;
             display: flex; justify-content: space-between; align-items: center;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2); border-bottom: 2px solid #e63946;
+            flex-wrap: wrap; gap: 10px;
         }
 
         .header-left { display: flex; align-items: center; gap: 15px; }
         .logo-wrapper {
-            width: 60px; height: 60px; display: flex; align-items: center; justify-content: center;
+            width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;
             background: rgba(255,255,255,0.05); border-radius: 8px; overflow: hidden;
         }
         .logo-wrapper img { max-height: 100%; width: auto; filter: drop-shadow(0 0 5px rgba(230, 57, 70, 0.5)); }
-        .logo-text h1 { margin: 0; font-size: 1.4rem; letter-spacing: 2px; text-transform: uppercase; line-height: 1; }
+        .logo-text h1 { margin: 0; font-size: 1.2rem; letter-spacing: 1px; text-transform: uppercase; line-height: 1.1; }
         .logo-text h1 span { color: #e63946; }
-        .logo-text small { font-size: 0.65rem; letter-spacing: 3px; color: #999; font-weight: bold; text-transform: uppercase; }
+        .logo-text small { font-size: 0.6rem; letter-spacing: 2px; color: #999; font-weight: bold; text-transform: uppercase; }
 
-        header a { color: white; text-decoration: none; font-weight: bold; border: 1px solid #e63946; padding: 8px 15px; border-radius: 6px; transition: 0.3s; }
+        header a { 
+            color: white; text-decoration: none; font-weight: bold; 
+            border: 1px solid #e63946; padding: 8px 15px; 
+            border-radius: 6px; transition: 0.3s; font-size: 0.9rem;
+        }
         header a:hover { background: #e63946; }
 
         /* НАВИГАЦИЯ И ПОИСК */
-        .nav-section { background: white; border-bottom: 1px solid #ddd; padding: 15px 5%; display: flex; flex-direction: column; gap: 10px; }
+        .nav-section { background: white; border-bottom: 1px solid #ddd; padding: 15px 5%; display: flex; flex-direction: column; gap: 15px; }
         .filters-group { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px; }
 
         .cat-nav { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-        .cat-btn { padding: 8px 18px; border-radius: 20px; border: 1px solid #ccc; background: white; cursor: pointer; font-weight: 600; transition: 0.3s; font-size: 0.85rem; }
+        .cat-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid #ccc; background: white; cursor: pointer; font-weight: 600; transition: 0.3s; font-size: 0.8rem; }
         .cat-btn:hover, .cat-btn.active { background: #e63946; color: white; border-color: #e63946; }
 
-        .search-container { position: relative; margin-right: 10px; }
+        .search-container { position: relative; flex-grow: 1; min-width: 200px; }
         .search-input {
-            padding: 8px 15px 8px 35px; border-radius: 20px; border: 1px solid #ddd;
-            font-size: 0.85rem; width: 180px; transition: 0.3s; outline: none;
+            padding: 10px 15px 10px 40px; border-radius: 25px; border: 1px solid #ddd;
+            font-size: 0.9rem; width: 100%; box-sizing: border-box; outline: none; transition: 0.3s;
         }
-        .search-input:focus { border-color: #e63946; width: 220px; }
-        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #999; }
+        .search-input:focus { border-color: #e63946; box-shadow: 0 0 8px rgba(230, 57, 70, 0.1); }
+        .search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none; }
 
         .brand-nav { border-top: 1px dashed #eee; padding-top: 10px; width: 100%; }
         .brand-label { font-size: 0.7rem; font-weight: bold; color: #999; text-transform: uppercase; margin-right: 10px; }
 
-        .sort-container { display: flex; align-items: center; gap: 8px; background: #f8f9fa; padding: 5px 12px; border-radius: 8px; border: 1px solid #eee; }
-        .sort-select { border: none; background: transparent; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; outline: none; }
+        .sort-container { display: flex; align-items: center; gap: 8px; background: #f8f9fa; padding: 8px 12px; border-radius: 8px; border: 1px solid #eee; }
+        .sort-select { border: none; background: transparent; font-size: 0.85rem; font-weight: 600; cursor: pointer; outline: none; }
 
         /* КАРТОЧКИ ТОВАРОВ */
-        .container { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding: 40px 5%; max-width: 1400px; margin: 0 auto; }
-        .card { background: white; padding: 20px; border-radius: 16px; text-align: center; box-shadow: 0 6px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; transition: 0.3s; border: 1px solid #eee; cursor: pointer; height: fit-content; }
-        .card:hover { transform: translateY(-8px); box-shadow: 0 12px 25px rgba(0,0,0,0.12); }
+        .container { 
+            flex: 1; display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 25px; padding: 30px 5%; 
+            max-width: 1400px; margin: 0 auto; width: 90%; 
+        }
+        .card { 
+            background: white; padding: 20px; border-radius: 16px; 
+            text-align: center; box-shadow: 0 6px 15px rgba(0,0,0,0.05); 
+            display: flex; flex-direction: column; transition: 0.3s; 
+            border: 1px solid #eee; cursor: pointer; height: fit-content; 
+        }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 12px 25px rgba(0,0,0,0.1); }
         .card img { width: 100%; height: 200px; object-fit: contain; margin-bottom: 15px; border-radius: 8px; }
         .card h3 { margin: 10px 0; font-size: 1.1rem; min-height: 2.4rem; display: flex; align-items: center; justify-content: center; }
         .price { font-size: 1.4rem; font-weight: 800; color: #e63946; margin: 15px 0; }
@@ -62,11 +85,34 @@
         /* ФУТЕР (ПОДВАЛ) */
         footer { background: #1a1a1a; color: white; padding: 40px 5%; text-align: center; margin-top: auto; border-top: 4px solid #e63946; }
         .tg-btn {
-            background: #0088cc; color: white; padding: 15px 30px; border-radius: 30px;
+            background: #0088cc; color: white; padding: 12px 25px; border-radius: 30px;
             text-decoration: none; font-weight: bold; display: inline-flex; align-items: center;
             gap: 10px; transition: 0.3s; box-shadow: 0 4px 15px rgba(0,136,204,0.3);
         }
         .tg-btn:hover { background: #0077b5; transform: scale(1.05); }
+
+        /* --- АДАПТИВНОСТЬ ДЛЯ ТЕЛЕФОНОВ --- */
+        @media (max-width: 768px) {
+            header { justify-content: center; padding: 15px; }
+            .header-left { width: 100%; justify-content: center; margin-bottom: 10px; }
+            
+            .nav-section { padding: 15px 20px; }
+            .filters-group { flex-direction: column; align-items: stretch; }
+            
+            .search-container { order: -1; width: 100%; margin-right: 0; }
+            .cat-nav { justify-content: center; }
+            .sort-container { justify-content: center; }
+
+            .container { 
+                grid-template-columns: 1fr; /* Один товар в ряд на телефонах */
+                padding: 20px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .card { padding: 15px; }
+            .modal-content { padding: 20px; width: 95%; }
+        }
 
         /* МОДАЛЬНОЕ ОКНО */
         .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; backdrop-filter: blur(8px); }
@@ -95,7 +141,7 @@
     <div class="filters-group">
         <div class="cat-nav">
             <div class="search-container">
-                <span class="search-icon" style="position:absolute; left:12px; top:8px;">🔍</span>
+                <span class="search-icon">🔍</span>
                 <input type="text" id="productSearch" class="search-input" placeholder="Поиск товара..." onkeyup="filterItems()">
             </div>
             <button class="cat-btn active f-cat" onclick="setActiveFilter('all', this, 'cat')">Все товары</button>
