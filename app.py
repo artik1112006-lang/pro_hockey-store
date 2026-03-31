@@ -82,19 +82,16 @@ async def cart_page(request: Request):
     return templates.TemplateResponse(request=request, name="cart.html", context={})
 
 
-# ТОТ САМЫЙ РАБОЧИЙ МАРШРУТ (ПРИНИМАЕТ ЗАКАЗ ИЗ КОРЗИНЫ)
 @app.post("/checkout")
 async def checkout(order: OrderData, db: Session = Depends(get_db)):
     name = order.customer.get('name')
     phone = order.customer.get('phone')
     items_list = ", ".join([f"{item.name} ({item.price} BYN)" for item in order.items])
 
-    # Сохраняем в базу (твоя таблица Order)
     new_order = Order(name=name, phone=phone, items=items_list)
     db.add(new_order)
     db.commit()
 
-    # Шлем в Telegram
     msg = f"<b>🚨 НОВЫЙ ЗАКАЗ!</b>\n👤 {name}\n📞 {phone}\n📦 {items_list}\n💰 Итого: {order.total} BYN"
     send_telegram_msg(msg)
 
@@ -122,14 +119,37 @@ async def admin(request: Request, db: Session = Depends(get_db)):
         }
     )
 
-
+# --- УПРАВЛЕНИЕ КАТЕГОРИЯМИ ---
 @app.post("/admin/category/add")
 async def add_category(name: str = Form(...), db: Session = Depends(get_db)):
-    db.add(Category(name=name));
+    db.add(Category(name=name))
     db.commit()
     return RedirectResponse(url="/admin", status_code=303)
 
+@app.post("/admin/category/delete/{c_id}")
+async def delete_category(c_id: int, db: Session = Depends(get_db)):
+    cat = db.query(Category).filter(Category.id == c_id).first()
+    if cat:
+        db.delete(cat)
+        db.commit()
+    return RedirectResponse(url="/admin", status_code=303)
 
+# --- УПРАВЛЕНИЕ БРЕНДАМИ ---
+@app.post("/admin/brand/add")
+async def add_brand(name: str = Form(...), db: Session = Depends(get_db)):
+    db.add(Brand(name=name))
+    db.commit()
+    return RedirectResponse(url="/admin", status_code=303)
+
+@app.post("/admin/brand/delete/{b_id}")
+async def delete_brand(b_id: int, db: Session = Depends(get_db)):
+    brand = db.query(Brand).filter(Brand.id == b_id).first()
+    if brand:
+        db.delete(brand)
+        db.commit()
+    return RedirectResponse(url="/admin", status_code=303)
+
+# --- УПРАВЛЕНИЕ ТОВАРАМИ ---
 @app.post("/admin/add")
 async def add_product(name: str = Form(...), price: float = Form(...), img: str = Form(...),
                       desc: str = Form(""), category_id: int = Form(...), variants: str = Form(""),
