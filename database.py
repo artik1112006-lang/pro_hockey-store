@@ -3,32 +3,30 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
-# ОЧИЩЕННАЯ ССЫЛКА: Убрали pgbouncer=true, так как порт 6543 сам справляется
-DEFAULT_SUPABASE_URL = "postgresql://postgres:II7989038ii@db.wfzbuyyffmtucutnjmje.supabase.co:6543/postgres?sslmode=require"
+# ИСПОЛЬЗУЕМ ПРЯМОЙ IP АДРЕС (это обходит проблему "Сеть недоступна")
+# Мы убрали доменное имя и оставили только чистый адрес сервера
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:II7989038ii@15.237.253.181:5432/postgres?sslmode=require"
 
-# Берем из переменной Render (SUPABASE_URL) или используем дефолт выше
-SQLALCHEMY_DATABASE_URL = os.getenv("SUPABASE_URL", DEFAULT_SUPABASE_URL)
+# Если в Render есть переменная SUPABASE_URL, используем её, но только если она не пустая
+env_url = os.getenv("SUPABASE_URL")
+if env_url:
+    SQLALCHEMY_DATABASE_URL = env_url
 
-# Чистим ссылку от возможных ошибок формата Render
-if SQLALCHEMY_DATABASE_URL:
-    if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
-        SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
-    
-    # ПРИНУДИТЕЛЬНАЯ ЧИСТКА: Удаляем pgbouncer из строки, если он там затесался
-    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.split('&pgbouncer=')[0].split('?pgbouncer=')[0]
+# Исправляем префикс для SQLAlchemy
+if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Настройка движка
+# Создаем движок с длинным ожиданием (timeout), чтобы сеть успела проснуться
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10
+    connect_args={'connect_timeout': 10}
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# --- МОДЕЛИ ---
+# --- МОДЕЛИ (БЕЗ ИЗМЕНЕНИЙ) ---
 
 class Category(Base):
     __tablename__ = "categories"
