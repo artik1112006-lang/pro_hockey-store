@@ -71,3 +71,4 @@ class Order(Base):
 
 # Создаем таблицы
 Base.metadata.create_all(bind=engine)
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:II7989038ii@db.wfzbuyyffmtucutnjmje.supabase.co:5432/postgres"
