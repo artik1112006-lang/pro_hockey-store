@@ -3,15 +3,17 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
-# ЖЕСТКОЕ ПОДКЛЮЧЕНИЕ К SUPABASE (чтобы Render не ломился по старым адресам)
-# Добавлен параметр ?sslmode=require для стабильности соединения
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:II7989038ii@db.wfzbuyyffmtucutnjmje.supabase.co:5432/postgres?sslmode=require"
+# Мы меняем имя переменной на SUPABASE_URL, чтобы Render не подсовывал старый мусор
+SQLALCHEMY_DATABASE_URL = os.getenv("SUPABASE_URL")
 
-# На всякий случай оставляем проверку формата для Render
+# Если вдруг забыли прописать в Render, используем прямую ссылку (запасной вариант)
+if not SQLALCHEMY_DATABASE_URL:
+    SQLALCHEMY_DATABASE_URL = "postgresql://postgres:II7989038ii@db.wfzbuyyffmtucutnjmje.supabase.co:5432/postgres?sslmode=require"
+
+# Исправляем формат для SQLAlchemy
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Создание движка
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     pool_pre_ping=True,
@@ -21,7 +23,7 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# --- МОДЕЛИ ---
+# --- МОДЕЛИ (ОСТАВЛЯЕМ КАК ЕСТЬ) ---
 
 class Category(Base):
     __tablename__ = "categories"
@@ -58,5 +60,4 @@ class Order(Base):
     phone = Column(String)
     items = Column(String)
 
-# СОЗДАНИЕ ТАБЛИЦ
 Base.metadata.create_all(bind=engine)
