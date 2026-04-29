@@ -3,30 +3,32 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
-# ИСПОЛЬЗУЕМ ПРЯМОЙ IP АДРЕС (это обходит проблему "Сеть недоступна")
-# Мы убрали доменное имя и оставили только чистый адрес сервера
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:II7989038ii@15.237.253.181:5432/postgres?sslmode=require"
+# Используем специальный домен для IPv4 и порт 6543 (PgBouncer)
+# Это ЕДИНСТВЕННЫЙ способ заставить Render работать с внешней базой без IPv6
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:II7989038ii@aws-0-eu-central-1.pooler.supabase.com:6543/postgres?sslmode=require"
 
-# Если в Render есть переменная SUPABASE_URL, используем её, но только если она не пустая
+# Если в Render настроена переменная, берем её
 env_url = os.getenv("SUPABASE_URL")
 if env_url:
     SQLALCHEMY_DATABASE_URL = env_url
 
-# Исправляем префикс для SQLAlchemy
+# Фикс для SQLAlchemy
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-# Создаем движок с длинным ожиданием (timeout), чтобы сеть успела проснуться
+# Создаем движок с очень агрессивными настройками переподключения
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     pool_pre_ping=True,
-    connect_args={'connect_timeout': 10}
+    pool_size=3,
+    max_overflow=0,
+    connect_args={'connect_timeout': 30}
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# --- МОДЕЛИ (БЕЗ ИЗМЕНЕНИЙ) ---
+# --- МОДЕЛИ (ОСТАВЛЯЕМ БЕЗ ИЗМЕНЕНИЙ) ---
 
 class Category(Base):
     __tablename__ = "categories"
