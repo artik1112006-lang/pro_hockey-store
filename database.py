@@ -3,27 +3,30 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
-# Мы меняем имя переменной на SUPABASE_URL, чтобы Render не подсовывал старый мусор
-SQLALCHEMY_DATABASE_URL = os.getenv("SUPABASE_URL")
+# ИСПОЛЬЗУЕМ ПОРТ 6543 И РЕЖИМ PGBOUNCER (это решает проблему "Сеть недоступна")
+# Прямая ссылка на случай, если переменная в Render не задана
+DEFAULT_SUPABASE_URL = "postgresql://postgres:II7989038ii@db.wfzbuyyffmtucutnjmje.supabase.co:6543/postgres?sslmode=require&pgbouncer=true"
 
-# Если вдруг забыли прописать в Render, используем прямую ссылку (запасной вариант)
-if not SQLALCHEMY_DATABASE_URL:
-    SQLALCHEMY_DATABASE_URL = "postgresql://postgres:II7989038ii@db.wfzbuyyffmtucutnjmje.supabase.co:5432/postgres?sslmode=require"
+# Пытаемся взять ссылку из переменной SUPABASE_URL, если ее нет — берем DEFAULT_SUPABASE_URL
+SQLALCHEMY_DATABASE_URL = os.getenv("SUPABASE_URL", DEFAULT_SUPABASE_URL)
 
-# Исправляем формат для SQLAlchemy
-if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
+# Исправляем префикс для SQLAlchemy (важно для совместимости)
+if SQLALCHEMY_DATABASE_URL and SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
+# Создание движка с настройками пула для работы через прокси
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     pool_pre_ping=True,
-    pool_recycle=3600
+    pool_size=5,
+    max_overflow=10,
+    pool_recycle=300
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# --- МОДЕЛИ (ОСТАВЛЯЕМ КАК ЕСТЬ) ---
+# --- МОДЕЛИ (БЕЗ ИЗМЕНЕНИЙ) ---
 
 class Category(Base):
     __tablename__ = "categories"
@@ -60,4 +63,5 @@ class Order(Base):
     phone = Column(String)
     items = Column(String)
 
+# Создание таблиц (теперь через порт 6543)
 Base.metadata.create_all(bind=engine)
