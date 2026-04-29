@@ -3,30 +3,32 @@ from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
-# ИСПОЛЬЗУЕМ ПОРТ 6543 И РЕЖИМ PGBOUNCER (это решает проблему "Сеть недоступна")
-# Прямая ссылка на случай, если переменная в Render не задана
-DEFAULT_SUPABASE_URL = "postgresql://postgres:II7989038ii@db.wfzbuyyffmtucutnjmje.supabase.co:6543/postgres?sslmode=require&pgbouncer=true"
+# ОЧИЩЕННАЯ ССЫЛКА: Убрали pgbouncer=true, так как порт 6543 сам справляется
+DEFAULT_SUPABASE_URL = "postgresql://postgres:II7989038ii@db.wfzbuyyffmtucutnjmje.supabase.co:6543/postgres?sslmode=require"
 
-# Пытаемся взять ссылку из переменной SUPABASE_URL, если ее нет — берем DEFAULT_SUPABASE_URL
+# Берем из переменной Render (SUPABASE_URL) или используем дефолт выше
 SQLALCHEMY_DATABASE_URL = os.getenv("SUPABASE_URL", DEFAULT_SUPABASE_URL)
 
-# Исправляем префикс для SQLAlchemy (важно для совместимости)
-if SQLALCHEMY_DATABASE_URL and SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
-    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+# Чистим ссылку от возможных ошибок формата Render
+if SQLALCHEMY_DATABASE_URL:
+    if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
+        SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+    
+    # ПРИНУДИТЕЛЬНАЯ ЧИСТКА: Удаляем pgbouncer из строки, если он там затесался
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.split('&pgbouncer=')[0].split('?pgbouncer=')[0]
 
-# Создание движка с настройками пула для работы через прокси
+# Настройка движка
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
     pool_pre_ping=True,
     pool_size=5,
-    max_overflow=10,
-    pool_recycle=300
+    max_overflow=10
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
-# --- МОДЕЛИ (БЕЗ ИЗМЕНЕНИЙ) ---
+# --- МОДЕЛИ ---
 
 class Category(Base):
     __tablename__ = "categories"
@@ -63,5 +65,5 @@ class Order(Base):
     phone = Column(String)
     items = Column(String)
 
-# Создание таблиц (теперь через порт 6543)
+# Создание таблиц
 Base.metadata.create_all(bind=engine)
