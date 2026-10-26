@@ -1,0 +1,6 @@
+{
+  "name": "Pro Hockey Store",
+  "description": "Интернет-магазин профессиональной хоккейной экипировки Pro Hockey Store: клюшки, коньки, экипировка с каталогом, корзиной, оформлением заказов в Telegram и панелью администратора.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
